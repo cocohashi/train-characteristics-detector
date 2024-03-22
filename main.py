@@ -55,8 +55,8 @@ month = 3
 day = 7
 
 # Paths
-root_path = os.path.abspath(os.path.join(os.getcwd()))
-data_path = os.path.join(root_path, "data")
+root_path = os.path.abspath(os.path.join(os.getcwd(), "./.."))
+data_path = os.path.join(root_path, "data", "MC", file_extension)
 day_path = os.path.join(data_path, str(year), str(month), str(day))
 output_path = os.path.join(data_path, "output")
 
@@ -65,7 +65,7 @@ train_char_schema: dict[str, str | None] = {
     "datetime": None,
     "event": None,
     "status": "not-computed",
-    "direction": None, # "positive", "negative"
+    "direction": None,
     "rail-id": None,
     "train-id": None,
     "speed": None,
