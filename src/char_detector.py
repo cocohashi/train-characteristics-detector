@@ -1,0 +1,182 @@
+import numpy as np
+from scipy import ndimage
+from sklearn.linear_model import LinearRegression
+import logging
+
+from .signal_processor import SignalProcessor
+
+logging.basicConfig(level="DEBUG")
+logger = logging.getLogger(__name__)
+
+
+class CharDetector(SignalProcessor):
+    def __init__(self, signal_processor, **config):
+        super(SignalProcessor, self).__init__()
+
+        self.signal_processor = signal_processor
+        self.filtered_data = signal_processor.filtered_data  # Cut-off freq: Wn-mask
+        self.N = signal_processor.N
+
+        signal_processor.Wn = config['signal']['Wn-class']  # Change Cut-off freq: Wn-class
+        self.section_limit = config['char-detector']['section-limit']
+        self.section_num = config['char-detector']['section-num']
+        self.mask_width = config['char-detector']['mask-width'] / self.N
+        self.thr_perc = config['char-detector']['thr-perc']
+        self.mf_window = config['char-detector']['mf-window']
+
+        # Slice waterfall in different spatial sections
+        self.sections = self.get_sections()
+
+        # Compute sobel and threshold filters to each section
+        self.sobel_sections = [self.sobel_filter(data) for data in self.sections]
+        self.thr_sections = [self.thresholding(data) for data in self.sobel_sections]
+
+        # Get mask of each section
+        self.mean_filter_sections = [self.mean_filter(data) for data in self.thr_sections]
+        self.coordinates_sections = [self.one_hot_to_coordinates(data) for data in self.mean_filter_sections]
+        self.linear_reg_params = [self.linear_regression(coordinate) for coordinate in self.coordinates_sections]
+        self.mask_sections = [self.get_mask(self.thr_sections[x], **self.linear_reg_params[x]) for x in
+                              range(self.section_num)]
+
+        # Filter data again using the filter defined in Wn-class
+        self.filtered_data = signal_processor.butterworth_filter()  # Apply Cut-off freq: Wn-class
+        self.sections = self.get_sections()
+
+        # Apply mask to each section
+        self.masked_sections = [np.multiply(self.sections[x], self.mask_sections[x]) for x in range(self.section_num)]
+        self.masked_sections = [self.auto_crop(data) for data in self.masked_sections]
+        self.rail_view = [self.filter_zeros(data) for data in self.masked_sections]
+
+    def get_sections(self):
+        """
+        Subdivides matrix into "n" Spatial Sections by a given "section limit"
+        :return: 2D Numpy array
+        """
+        s_lim = self.section_limit
+        n = self.section_num
+        return [self.filtered_data[:, x * s_lim: (x + 1) * s_lim] for x in range(n)]
+
+    def sobel_filter(self, data, sigma=1):
+        """
+        Applies a sobel filter that highlights vertical and horizontal borders for a given 2D numpy array.
+        :param data Waterfall matrix Spatial Section
+        :param sigma: Sobel's filter parameter that determines output amplitude range
+        :return: 2D Numpy array
+        """
+        Kx = np.array([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]], np.float32)
+        Ky = np.array([[1, 2, 1], [0, 0, 0], [-1, -2, -1]], np.float32)
+
+        Ix = ndimage.filters.convolve(data, Kx)
+        Iy = ndimage.filters.convolve(data, Ky)
+
+        G = np.hypot(Ix, Iy)
+        sobel = G / G.max() * sigma
+
+        return sobel
+
+    def thresholding(self, data):
+        """
+        Applies thresholding to obtain one-hot-encoding 2D matrix.
+        :param data: Sobel matrix Spatial Section
+        :return: 2D Numpy array
+        """
+        min = data.min()
+        max = data.max()
+        thr = min + (max - min) * self.thr_perc
+
+        output = np.zeros(data.shape)
+        mask_x, mask_y = np.where(data >= thr)
+        output[mask_x, mask_y] = 1
+
+        return output
+
+    def mean_filter(self, data):
+        """
+        Makes the mean filter of the columns first and then the lines to reduce noise and obtain much more cleaner
+        train trace.
+        The best results are obtained computing this procedure to a one-hot-encoding matrix.
+        :param data: 2D numpy array (in one-hot-encoding format)
+        :param mf_window: mean filter windows length
+        :return: 2D numpy array (in one-hot-encoding format)
+        """
+        column_filter = ndimage.median_filter(data, size=self.mf_window, axes=1)
+        return ndimage.median_filter(column_filter, size=self.mf_window, axes=0)
+
+    def one_hot_to_coordinates(self, data):
+        """
+        Obtains x and y coordinate axis from one-hot-encoded 2D array matrix
+        :param data: 2D numpy array (in one-hot-encoding format)
+        :return: 2D numpy array of shape (N,2) where N depends on the number of "1's" in the matrix,
+                 first column refers to "x" axis,
+                 second column refers to "y" axis.
+        """
+        return np.array(list(map(list, (zip(*np.where(data == 1))))))
+
+    def linear_regression(self, data):
+        """
+        Computes linear regression from a given x and y coordinates
+        :param data: 2D numpy array of (N,2) shape containing x and y coordinates
+        :return: score: (float) r-square value (from 0 to 1)
+                 slope: slope of the computed regression line (where f(x) = mx + n)
+                 intercept: f(0) value. The y value where the line intercepts with x = 0
+        """
+        x = data[:, 1].reshape((-1, 1))
+        y = data[:, 0]
+
+        model = LinearRegression().fit(x, y)
+        score = model.score(x, y)
+        intercept = model.intercept_
+        slope = model.coef_[0]
+
+        return {"slope": slope, "intercept": intercept, "score": score}
+
+    def get_mask(self, data, **params):
+        """
+        Computes a 2D mask of the train's waterfall trace
+        :param data: 2D numpy array (in one-hot-encoding)
+        :param m: (float) slope of computed line (f(x) = mx + n)
+        :param n: (float) f(0) value of line
+        :param bw: (float) border-width
+        :return: 2D numpy array
+        """
+        m = params['slope']
+        n = params['intercept']
+        bw = self.mask_width
+
+        ys = lambda x: m * x + n + int(bw / 2)
+        yd = lambda x: m * x + n - int(bw / 2)
+
+        mask = np.zeros(data.shape)
+
+        for x in range(mask.shape[1]):
+            mask.T[x, int(-ys(x) - 1): int(-yd(x))] = 1
+            mask[:, x] = mask[::-1, x]
+
+        return mask
+
+    def auto_crop(self, data):
+        """
+        Deletes all empty rows and columns
+        :param data: 2D numpy array
+        :return: 2D numpy array
+        """
+        data = data[
+               :, [any(np.array(data[:, x])) for x in range(data.shape[1])]
+               ]
+        return data[
+               [any(np.array(data[x, :])) for x in range(data.shape[0])], :
+               ]
+
+    def filter_zeros(self, data):
+        """
+        Filters 0'values from a given 2D matrix columns by column (in waterfall's time-domain)
+        :param data: 2D numpy array
+        :return: 2D numpy array
+        """
+        bw = self.mask_width
+        out = np.zeros([int(bw + 1), data.shape[1]])
+        for x in range(data.shape[1]):
+            values = data[:, x]
+            filtered_values = values[values != 0]
+            out[:, x] = np.pad(filtered_values, (0, int(bw + 1) - filtered_values.shape[0]), 'constant')
+        return out
