@@ -12,12 +12,13 @@ logger = logging.getLogger(__name__)
 class DataLoader:
     def __init__(self, fullpath: str):
         """
-        Loads JSON data
+        Loads JSON or Numpy data
         :rtype: object
         """
         super(DataLoader, self).__init__()
         self.fullpath = fullpath
-
+        self.filename = os.path.basename(fullpath)
+        self.extension = self.filename.split('.')[1]
         # DICTIONARY WITH SETTINGS
         # Just to have objects references
         self.items = {}
@@ -33,8 +34,17 @@ class DataLoader:
             )
             self.items = None
         else:
-            self.deserialize()
-            self.get_data()
+            if len(self.filename.split(".json")) > 1:
+                self.deserialize()
+                self.get_json_data()
+
+            elif len(self.filename.split(".npy")) > 1:
+                self.get_npy_data()
+
+            else:
+                logger.warning(
+                    f"Incorrect file extension given: '{self.extension}'. Only 'json' or 'npy' is allowed."
+                )
 
     # SERIALIZE JSON
     # ///////////////////////////////////////////////////////////////
@@ -53,7 +63,7 @@ class DataLoader:
 
     # GET STRAIN DATA FROM JSON
     # ///////////////////////////////////////////////////////////////
-    def get_data(self):
+    def get_json_data(self):
         assert {"measurements", "position"}.issubset(
             self.items.keys()
         ), "JSON file do not contains at least 'measurements' and 'position' keys"
@@ -65,3 +75,10 @@ class DataLoader:
 
         for i in range(0, self.temporal_len):
             self.data[i, :] = self.measurements[str(i)]["strain"]
+
+    # GET STRAIN DATA FROM NUMPY ARRAY
+    # ///////////////////////////////////////////////////////////////
+    def get_npy_data(self):
+        self.data = np.load(self.fullpath)
+        self.temporal_len = self.data.shape[0]
+        self.spatial_len = self.data.shape[1]

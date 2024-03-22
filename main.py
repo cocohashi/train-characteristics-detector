@@ -49,15 +49,15 @@ parser.add_argument(
 # Confing Parameters
 # -----------------------------------------------------------------------------------------------------------------
 # Metadata
-file_extension = "json"
+file_extension = "npy"  # Only "json" and "npy" allowed
 year = 2023
 month = 3
-day = 7
+day = 8
 
 # Paths
 root_path = os.path.abspath(os.path.join(os.getcwd(), "./.."))
 data_path = os.path.join(root_path, "data", "MC", file_extension)
-day_path = os.path.join(data_path, str(year), str(month), str(day))
+day_path = os.path.join(data_path, str(year), f"{month:02}", f"{day:02}")
 output_path = os.path.join(data_path, "output")
 
 # Train Characteristic Schema
@@ -159,7 +159,8 @@ if __name__ == "__main__":
     # Check data entry
     assert (
             filename.split(".")[-1] == file_extension
-    ), f"Please enter a file with '{file_extension}' extension"
+    ), (f"Defined '{file_extension}' file-extension in config, do not matches with given file-extension"
+        f" '{filename.split('.')[-1]}'.")
 
     assert (
         os.path.exists(day_path)
