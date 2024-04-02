@@ -233,9 +233,8 @@ class CharDetector(SignalProcessor):
         rail_view_temp = np.zeros(rail_view.shape)
 
         for x in range(rail_view.shape[1]):
-            rail_view_temp[:,x] = self.normalize(rail_view[:,x])
-            
+            rail_view_temp[:, x] = self.normalize(rail_view[:, x])
+
         rail_view_mean = rail_view_temp.mean(axis=1)
         offset = np.median(rail_view_mean[:offset_lim])
         self.train_track = rail_view_mean - offset
-
