@@ -145,7 +145,9 @@ def get_train_characteristics(data: np.array, schema: dict = None) -> dict:
     char_detector = CharDetector(signal_processor, **config)
 
     # Update given schema with computed train characteristic values
-    schema.update({"direction": char_detector.direction,
+    schema.update({"status": "computed",
+                   "event": "TRAIN",
+                   "direction": char_detector.direction,
                    "rail-id": char_detector.rail_id,
                    "speed": char_detector.speed,
                    "speed-error": char_detector.speed_error})
