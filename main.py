@@ -136,7 +136,9 @@ def get_train_characteristics(data: np.array, schema: dict = None) -> dict:
 
     # Update given schema with computed train characteristic values
     schema.update({"direction": char_detector.direction,
-                   "rail-id": char_detector.rail_id})
+                   "rail-id": char_detector.rail_id,
+                   "speed": char_detector.speed,
+                   "speed-error": char_detector.speed_error})
 
     return {"train_char": schema, "signal_processor": signal_processor, "char_detector": char_detector}
 

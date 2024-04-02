@@ -1,4 +1,6 @@
 import logging
+from typing import Callable, Any
+
 import numpy as np
 from scipy import ndimage
 from sklearn.linear_model import LinearRegression
@@ -17,6 +19,7 @@ class CharDetector(SignalProcessor):
         self.signal_processor = signal_processor
         self.filtered_data = signal_processor.filtered_data  # Cut-off freq: Wn-mask
         self.N = signal_processor.N
+        self.dt = signal_processor.dt
 
         signal_processor.Wn = config['signal']['Wn-class']  # Change Cut-off freq: Wn-class
         self.section_limit = config['char-detector']['section-limit']
@@ -30,6 +33,8 @@ class CharDetector(SignalProcessor):
         self.directions = []
         self.direction = ""
         self.rail_id = None
+        self.speed = 0
+        self.speed_error = 0
 
         # Slice waterfall in different spatial sections
         self.sections = self.get_sections()
@@ -56,6 +61,9 @@ class CharDetector(SignalProcessor):
 
         self.get_direction()
         self.get_rail_id()
+        self.get_speed()
+
+        logger.info(f"liar_reg_params: {self.linear_reg_params}")
 
     def get_sections(self):
         """
@@ -208,3 +216,11 @@ class CharDetector(SignalProcessor):
     def get_rail_id(self):
         self.rail_id = np.argmax([self.get_psd(x) for x in self.rail_view])
         self.direction = self.directions[self.rail_id]
+
+    def get_speed(self, d_eff=470 / 110, dec=3, f=3.6):
+        dt = self.dt
+        slopes = [x['slope'] for x in self.linear_reg_params]
+        _get_speed: Callable[[int], int] = lambda slope: round(d_eff * f / (slope * dt), dec)
+        speeds = [abs(_get_speed(slope)) for slope in slopes]
+        self.speed = np.mean(speeds)
+        self.speed_error = round(self.speed - min(speeds), dec)
