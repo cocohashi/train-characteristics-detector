@@ -51,17 +51,20 @@ parser.add_argument(
 # -----------------------------------------------------------------------------------------------------------------
 # Confing Parameters
 # -----------------------------------------------------------------------------------------------------------------
-# Metadata
+# Data directory names
+project_name = "MC"
 file_extension = "npy"  # Only "json" and "npy" allowed
 year = 2023
 month = 3
 day = 8
 
-# Paths
+# Data Paths
 root_path = os.path.abspath(os.path.join(os.getcwd(), "./.."))
-data_path = os.path.join(root_path, "data", "MC", file_extension)
-day_path = os.path.join(data_path, str(year), f"{month:02}", f"{day:02}")
-output_path = os.path.join(data_path, "output")
+data_path = os.path.join(root_path, "data", project_name)
+data_path_ext = os.path.join(data_path, file_extension)
+day_path = os.path.join(data_path_ext, str(year), f"{month:02}", f"{day:02}")
+output_path = os.path.join(data_path_ext, "output")
+base_path = os.path.join(data_path, "base")
 
 # Train Characteristic Schema
 train_char_schema: dict[str, str | None] = {
@@ -75,6 +78,15 @@ train_char_schema: dict[str, str | None] = {
     "speed-magnitude": "kmh",
     "speed-error": None
 }
+
+# Train-id's
+train_ids = [
+    "S-102-6p",
+    "S-102-8p",
+    "S-103-u",
+    "S-103-d",
+    "S-104"
+]
 
 # Signal processing
 config = {
@@ -155,9 +167,13 @@ def get_train_characteristics(data: np.array, schema: dict = None) -> dict:
     return {"train_char": schema, "signal_processor": signal_processor, "char_detector": char_detector}
 
 
-def make_output_data_dirs():
-    if not os.path.isdir(data_path):
-        os.makedirs(data_path)
+def make_data_dirs():
+    if not os.path.isdir(data_path_ext):
+        os.makedirs(data_path_ext)
+
+    # Base path
+    if not os.path.isdir(base_path):
+        os.mkdir(base_path)
 
     # Output paths
     if not os.path.isdir(output_path):
@@ -178,10 +194,30 @@ def make_output_data_dirs():
     return None
 
 
+def check_base_train_ids():
+    BASE_TRAIN_IDS = True
+    train_track_dirs = [dr for dr in os.listdir(base_path)]
+    # logger.info(f"train_track_dirs: {train_track_dirs}")
+
+    # Not found train-track directories
+    if len(train_track_dirs) < 1:
+        logger.warning(f"Base path is empty. Train-id cannot be computed.")
+        logger.warning(f"Base path: {base_path}")
+        BASE_TRAIN_IDS = False
+
+    else:
+        for not_found_dir in list(set(train_ids) - set(train_track_dirs)):
+            logger.warning(f" '{not_found_dir}' train-id defined and not found")
+            BASE_TRAIN_IDS = False
+
+    logger.info(f"Compute Train Id's (BASE_TRAIN_IDS): {BASE_TRAIN_IDS}")
+
+
 if __name__ == "__main__":
     args = parser.parse_args()
     filename = args.filename
-    make_output_data_dirs()
+    make_data_dirs()
+    check_base_train_ids()
 
     # Check data entry
     assert (
