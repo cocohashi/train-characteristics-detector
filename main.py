@@ -88,6 +88,8 @@ train_ids = [
     "S-104"
 ]
 
+BASE_TRAIN_IDS = True
+
 # Signal processing
 config = {
     # Signal Processor
@@ -195,9 +197,8 @@ def make_data_dirs():
 
 
 def check_base_train_ids():
-    BASE_TRAIN_IDS = True
+    global BASE_TRAIN_IDS
     train_track_dirs = [dr for dr in os.listdir(base_path)]
-    # logger.info(f"train_track_dirs: {train_track_dirs}")
 
     # Not found train-track directories
     if len(train_track_dirs) < 1:
