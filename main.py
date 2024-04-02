@@ -104,31 +104,16 @@ config = {
         "cmap": "seismic",
         "figsize": None,
         "extent": None
+    },
+
+    "schema": {
+        "positive-direction": "Cordoba - Malaga",
+        "negative-direction": "Malaga - Cordoba"
     }
 }
+
+
 # -----------------------------------------------------------------------------------------------------------------
-
-# Make path dirs
-# Data path
-if not os.path.isdir(data_path):
-    os.mkdir(data_path)
-
-# Output paths
-if not os.path.isdir(output_path):
-    os.mkdir(output_path)
-
-output_year_path = os.path.join(output_path, str(year))
-if not os.path.isdir(output_year_path):
-    os.mkdir(output_year_path)
-
-output_month_path = os.path.join(output_year_path, str(month))
-if not os.path.isdir(output_month_path):
-    os.mkdir(output_month_path)
-
-output_day_path = os.path.join(output_month_path, str(day))
-if not os.path.isdir(output_day_path):
-    os.mkdir(output_day_path)
-
 
 def get_train_characteristics(data: np.array, schema: dict = None) -> dict:
     """
@@ -144,7 +129,7 @@ def get_train_characteristics(data: np.array, schema: dict = None) -> dict:
         schema = train_char_schema
 
     # Process the Waterfall to clean the noise
-    signal_processor = SignalProcessor(data_loader.data, **config)
+    signal_processor = SignalProcessor(data, **config)
 
     # Process Waterfall to obtain train characteristics
     char_detector = CharDetector(signal_processor, **config)
@@ -152,9 +137,33 @@ def get_train_characteristics(data: np.array, schema: dict = None) -> dict:
     return {"train_char": schema, "signal_processor": signal_processor, "char_detector": char_detector}
 
 
+def make_output_data_dirs():
+    if not os.path.isdir(data_path):
+        os.makedirs(data_path)
+
+    # Output paths
+    if not os.path.isdir(output_path):
+        os.mkdir(output_path)
+
+    output_year_path = os.path.join(output_path, str(year))
+    if not os.path.isdir(output_year_path):
+        os.mkdir(output_year_path)
+
+    output_month_path = os.path.join(output_year_path, str(month))
+    if not os.path.isdir(output_month_path):
+        os.mkdir(output_month_path)
+
+    output_day_path = os.path.join(output_month_path, str(day))
+    if not os.path.isdir(output_day_path):
+        os.mkdir(output_day_path)
+
+    return None
+
+
 if __name__ == "__main__":
     args = parser.parse_args()
     filename = args.filename
+    make_output_data_dirs()
 
     # Check data entry
     assert (
