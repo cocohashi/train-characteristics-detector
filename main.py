@@ -206,37 +206,37 @@ if __name__ == "__main__":
         logger.debug(f"train-characteristic-values:\n{train_char}")
 
     if args.show_raw_wf:
-        data_plotter = DataPlotter(data_loader.data, **config)
+        data_plotter = DataPlotter(data_loader.data, **config['plot-matrix'])
         data_plotter.plot_matrix()
 
     if args.show_filtered_wf:
-        data_plotter = DataPlotter(signal_processor.filtered_data, **config)
+        data_plotter = DataPlotter(signal_processor.filtered_data, **config['plot-matrix'])
         data_plotter.plot_matrix()
 
     if args.show_sobel_wf:
         section = config['plot-matrix']['section']
-        data_plotter = DataPlotter(char_detector.sobel_sections[section], **config)
+        data_plotter = DataPlotter(char_detector.sobel_sections[section], **config['plot-matrix'])
         data_plotter.plot_matrix()
 
     if args.show_threshold_wf:
         section = config['plot-matrix']['section']
-        data_plotter = DataPlotter(char_detector.thr_sections[section], **config)
+        data_plotter = DataPlotter(char_detector.thr_sections[section], **config['plot-matrix'])
         data_plotter.plot_matrix()
 
     if args.show_mean_filter_wf:
         section = config['plot-matrix']['section']
-        data_plotter = DataPlotter(char_detector.mean_filter_sections[section], **config)
+        data_plotter = DataPlotter(char_detector.mean_filter_sections[section], **config['plot-matrix'])
         data_plotter.plot_matrix()
 
     if args.show_mask_wf:
         section = config['plot-matrix']['section']
-        data_plotter = DataPlotter(char_detector.mask_sections[section], **config)
+        data_plotter = DataPlotter(char_detector.mask_sections[section], **config['plot-matrix'])
         data_plotter.plot_matrix()
 
     if args.show_rail_view:
         logger.info("Rail view!")
         section = config['plot-matrix']['section']
-        data_plotter = DataPlotter(char_detector.rail_view[section], **config)
+        data_plotter = DataPlotter(char_detector.rail_view[section], **config['plot-matrix'])
         data_plotter.plot_matrix()
 
     # Serialize data
