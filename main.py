@@ -66,19 +66,6 @@ day_path = os.path.join(data_path_ext, str(year), f"{month:02}", f"{day:02}")
 output_path = os.path.join(data_path_ext, "output")
 base_path = os.path.join(data_path, "base")
 
-# Train Characteristic Schema
-train_char_schema: dict[str, str | None] = {
-    "datetime": None,
-    "event": None,
-    "status": "not-computed",
-    "direction": None,
-    "rail-id": None,
-    "train-id": None,
-    "speed": None,
-    "speed-magnitude": "kmh",
-    "speed-error": None
-}
-
 # Train-id's
 train_ids = [
     "S-102-6p",
@@ -87,6 +74,21 @@ train_ids = [
     "S-103-d",
     "S-104"
 ]
+
+# Train Characteristic Schema
+train_char_schema: dict[str, str | None] = {
+    "datetime": None,
+    "event": None,
+    "status": "not-computed",
+    "direction": None,
+    "speed": None,
+    "speed-magnitude": "kmh",
+    "speed-error": None,
+    "rail-id": None,
+    "train-id": None,
+    "confidence": None,
+    "train-ids": train_ids
+}
 
 BASE_TRAIN_IDS = True
 
@@ -107,7 +109,8 @@ config = {
         "section-num": 2,
         "mask-width": 12000,
         "thr-perc": 0.1,
-        "mf-window": 20
+        "mf-window": 20,
+        "method": "gaussian"  # Allowed values only: "exponential", "gaussian", "reciprocal", "custom"
     },
 
     # Data Plotting
@@ -230,12 +233,22 @@ def get_train_characteristics(data: np.array, base_data: list = base_data, schem
     char_detector = CharDetector(signal_processor, **config)
 
     # Update given schema with computed train characteristic values
-    schema.update({"status": "computed",
-                   "event": "TRAIN",
-                   "direction": char_detector.direction,
-                   "rail-id": char_detector.rail_id,
-                   "speed": char_detector.speed,
-                   "speed-error": char_detector.speed_error})
+    schema.update({
+        "status": "computed",
+        "event": "TRAIN",
+        "direction": char_detector.direction,
+        "rail-id": char_detector.rail_id,
+        "speed": char_detector.speed,
+        "speed-error": char_detector.speed_error})
+
+    if base_data:
+        char_detector.base_data = base_data
+        train_id_info = char_detector.get_train_id_info()
+        # logger.info(f"train_id_info: {train_id_info}")
+        schema.update({
+            "train-id": train_id_info['train-id'],
+            "confidence": train_id_info['confidence']
+        })
 
     return {"train_char": schema, "signal_processor": signal_processor, "char_detector": char_detector}
 

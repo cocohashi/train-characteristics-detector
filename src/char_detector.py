@@ -6,6 +6,12 @@ from scipy import ndimage
 from sklearn.linear_model import LinearRegression
 from scipy import signal
 
+from itertools import combinations
+from dtaidistance import dtw
+from dtaidistance import similarity as sim
+from fastdtw import fastdtw
+from scipy.spatial.distance import euclidean
+
 from .signal_processor import SignalProcessor
 
 logging.basicConfig(level="DEBUG")
@@ -27,6 +33,7 @@ class CharDetector(SignalProcessor):
         self.mask_width = config['char-detector']['mask-width'] / self.N
         self.thr_perc = config['char-detector']['thr-perc']
         self.mf_window = config['char-detector']['mf-window']
+        self.method = config['char-detector']['method']
         self.positive_direction = config['schema']['positive-direction']
         self.negative_direction = config['schema']['negative-direction']
 
@@ -36,6 +43,7 @@ class CharDetector(SignalProcessor):
         self.speed = 0
         self.speed_error = 0
         self.train_track = []
+        self.base_data = None
 
         # Slice waterfall in different spatial sections
         self.sections = self.get_sections()
@@ -238,3 +246,38 @@ class CharDetector(SignalProcessor):
         rail_view_mean = rail_view_temp.mean(axis=1)
         offset = np.median(rail_view_mean[:offset_lim])
         self.train_track = rail_view_mean - offset
+
+    @staticmethod
+    def get_confidence(val: int,
+                       r: int = 2,
+                       best_dist: float = 0.5,
+                       decimal: int = 5,
+                       method: str = "gaussian"):
+
+        if method == "exponential":
+            result = round(min(np.exp(-1 * (val - best_dist) / r), 1), decimal)
+        elif method == "gaussian":
+            result = round(min(np.exp(-1 * (val - best_dist) ** 2 / r ** 2), 1), decimal)
+        elif method == "reciprocal":
+            result = round(min(1 / (val ** r + best_dist * 1.5), 1), decimal)
+        elif method == "custom":
+            result = round(min((best_dist / val), 1), decimal)
+        else:
+            raise ValueError(f"method={method} is not supported")
+        return result
+
+    def get_train_id_confidence(self, base_train_ids):
+        dtw_distances = []
+        for base_train_id in base_train_ids:
+            distance = dtw.distance_fast(self.train_track, base_train_id, use_pruning=True)
+            dtw_distances.append(distance)
+        return self.get_confidence(np.mean(dtw_distances), method=self.method)
+
+    def get_train_id_info(self):
+        results = []
+        for data_dict in self.base_data:
+            base_train_ids = data_dict.get('data')
+            train_id = data_dict.get('train-id')
+            confidence = self.get_train_id_confidence(base_train_ids)
+            results.append({"confidence": confidence, "train-id": train_id, "method": "gaussian"})
+        return max(results, key=lambda x: x['confidence'])
