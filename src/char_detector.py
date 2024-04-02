@@ -35,6 +35,7 @@ class CharDetector(SignalProcessor):
         self.rail_id = None
         self.speed = 0
         self.speed_error = 0
+        self.train_track = []
 
         # Slice waterfall in different spatial sections
         self.sections = self.get_sections()
@@ -62,8 +63,7 @@ class CharDetector(SignalProcessor):
         self.get_direction()
         self.get_rail_id()
         self.get_speed()
-
-        logger.info(f"liar_reg_params: {self.linear_reg_params}")
+        self.get_train_track()
 
     def get_sections(self):
         """
@@ -202,7 +202,6 @@ class CharDetector(SignalProcessor):
     def get_direction(self):
         slopes = [section['slope'] for section in self.linear_reg_params]
         self.directions = [self.positive_direction if m > 0 else self.negative_direction for m in slopes]
-        logger.info(f"self.directions: {self.directions}")
 
     @staticmethod
     def get_psd(data, fs=1000):
@@ -224,3 +223,19 @@ class CharDetector(SignalProcessor):
         speeds = [abs(_get_speed(slope)) for slope in slopes]
         self.speed = np.mean(speeds)
         self.speed_error = round(self.speed - min(speeds), dec)
+
+    @staticmethod
+    def normalize(a, b=2, c=1):
+        return b * (a - min(a)) / (max(a) - min(a)) - c
+
+    def get_train_track(self, start=10, end=98, offset_lim=50):
+        rail_view = self.rail_view[self.rail_id][:, start:end]
+        rail_view_temp = np.zeros(rail_view.shape)
+
+        for x in range(rail_view.shape[1]):
+            rail_view_temp[:,x] = self.normalize(rail_view[:,x])
+            
+        rail_view_mean = rail_view_temp.mean(axis=1)
+        offset = np.median(rail_view_mean[:offset_lim])
+        self.train_track = rail_view_mean - offset
+
