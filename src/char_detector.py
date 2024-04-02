@@ -6,11 +6,7 @@ from scipy import ndimage
 from sklearn.linear_model import LinearRegression
 from scipy import signal
 
-from itertools import combinations
 from dtaidistance import dtw
-from dtaidistance import similarity as sim
-from fastdtw import fastdtw
-from scipy.spatial.distance import euclidean
 
 from .signal_processor import SignalProcessor
 
