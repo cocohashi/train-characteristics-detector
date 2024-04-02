@@ -44,6 +44,9 @@ parser.add_argument(
 parser.add_argument(
     "-rv", "--show-rail-view", action="store_true", help="Show Computed Rail View"
 )
+parser.add_argument(
+    "-tt", "--show-train-track", action="store_true", help="Show Train Track"
+)
 
 # -----------------------------------------------------------------------------------------------------------------
 # Confing Parameters
@@ -104,6 +107,13 @@ config = {
         "cmap": "seismic",
         "figsize": None,
         "extent": None
+    },
+
+    "plot-train-track": {
+        "figsize": None,
+        "xlabel": "x-axis (samples)",
+        "ylabel": "y-axis (samples)",
+        "title": "Train Track",
     },
 
     "schema": {
@@ -234,10 +244,14 @@ if __name__ == "__main__":
         data_plotter.plot_matrix()
 
     if args.show_rail_view:
-        logger.info("Rail view!")
         section = config['plot-matrix']['section']
         data_plotter = DataPlotter(char_detector.rail_view[section], **config['plot-matrix'])
         data_plotter.plot_matrix()
+
+    if args.show_train_track:
+        config['plot-train-track']['title'] = f"{config['plot-train-track']['title']} - filename: {filename}"
+        data_plotter = DataPlotter(char_detector.train_track, **config['plot-train-track'])
+        data_plotter.plot_train_track()
 
     # Serialize data
     # data_loader.items.update(train_char)

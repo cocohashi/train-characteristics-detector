@@ -10,14 +10,14 @@ logger = logging.getLogger(__name__)
 class DataPlotter:
     def __init__(self, data, **config):
         self.data = data
-        self.vmin = config['vmin']
-        self.vmax = config['vmax']
-        self.xlabel = config['xlabel']
-        self.ylabel = config['ylabel']
-        self.title = config['title']
-        self.cmap = config['cmap']
-        self.figsize = config['figsize']
-        self.extent = config['extent']
+        self.vmin = config.get('vmin')
+        self.vmax = config.get('vmax')
+        self.xlabel = config.get('xlabel')
+        self.ylabel = config.get('ylabel')
+        self.title = config.get('title')
+        self.cmap = config.get('cmap')
+        self.figsize = config.get('figsize')
+        self.extent = config.get('extent')
         self.fig = None
 
     def plot_matrix(self):
@@ -54,8 +54,18 @@ class DataPlotter:
         plt.show()
 
         self.fig = fig
-        return None
 
     def plot_train_track(self):
-        figsize = (18, 9)
-        fig, ax = plt.subplots(1, 1, figsize=figsize)
+
+        # ---- Set default figure size:
+        if self.figsize is None:
+            self.figsize = (19.2, 9.83)
+
+        fig, ax = plt.subplots(1, 1, figsize=self.figsize)
+        ax.plot(self.data)
+        ax.set_title(self.title)
+        ax.set_xlabel(self.xlabel)
+        ax.set_ylabel(self.ylabel)
+        plt.show()
+
+        self.fig = fig
