@@ -134,6 +134,10 @@ def get_train_characteristics(data: np.array, schema: dict = None) -> dict:
     # Process Waterfall to obtain train characteristics
     char_detector = CharDetector(signal_processor, **config)
 
+    # Update given schema with computed train characteristic values
+    schema.update({"direction": char_detector.direction,
+                   "rail-id": char_detector.rail_id})
+
     return {"train_char": schema, "signal_processor": signal_processor, "char_detector": char_detector}
 
 

@@ -1,7 +1,8 @@
+import logging
 import numpy as np
 from scipy import ndimage
 from sklearn.linear_model import LinearRegression
-import logging
+from scipy import signal
 
 from .signal_processor import SignalProcessor
 
@@ -23,6 +24,12 @@ class CharDetector(SignalProcessor):
         self.mask_width = config['char-detector']['mask-width'] / self.N
         self.thr_perc = config['char-detector']['thr-perc']
         self.mf_window = config['char-detector']['mf-window']
+        self.positive_direction = config['schema']['positive-direction']
+        self.negative_direction = config['schema']['negative-direction']
+
+        self.directions = []
+        self.direction = ""
+        self.rail_id = None
 
         # Slice waterfall in different spatial sections
         self.sections = self.get_sections()
@@ -46,6 +53,9 @@ class CharDetector(SignalProcessor):
         self.masked_sections = [np.multiply(self.sections[x], self.mask_sections[x]) for x in range(self.section_num)]
         self.masked_sections = [self.auto_crop(data) for data in self.masked_sections]
         self.rail_view = [self.filter_zeros(data) for data in self.masked_sections]
+
+        self.get_direction()
+        self.get_rail_id()
 
     def get_sections(self):
         """
@@ -180,3 +190,21 @@ class CharDetector(SignalProcessor):
             filtered_values = values[values != 0]
             out[:, x] = np.pad(filtered_values, (0, int(bw + 1) - filtered_values.shape[0]), 'constant')
         return out
+
+    def get_direction(self):
+        slopes = [section['slope'] for section in self.linear_reg_params]
+        self.directions = [self.positive_direction if m > 0 else self.negative_direction for m in slopes]
+        logger.info(f"self.directions: {self.directions}")
+
+    @staticmethod
+    def get_psd(data, fs=1000):
+        psd_sum = []
+        for x in range(0, data.shape[1], 1):
+            s = data[:, x]
+            (f, S) = signal.welch(s, fs, nperseg=data.shape[0])
+            psd_sum.append(sum(S))
+        return sum(psd_sum)
+
+    def get_rail_id(self):
+        self.rail_id = np.argmax([self.get_psd(x) for x in self.rail_view])
+        self.direction = self.directions[self.rail_id]
