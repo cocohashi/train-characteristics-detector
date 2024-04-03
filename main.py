@@ -146,28 +146,23 @@ config = {
 
 # -----------------------------------------------------------------------------------------------------------------
 def make_data_dirs():
+    # Exterior Data Path
     if not os.path.isdir(data_path_ext):
         os.makedirs(data_path_ext)
+
+    # Input Day Path
+    if not os.path.isdir(day_path):
+        os.makedirs(day_path)
+
+    # Output Day Path
+    # output_day_path = os.path.join(output_path,  str(year), str(month), str(day))
+    # logger.info(f"output_day_path: {output_day_path}")
+    # if not os.path.isdir(output_day_path):
+    #     os.makedirs(output_day_path)
 
     # Base path
     if not os.path.isdir(base_path):
         os.mkdir(base_path)
-
-    # Output paths
-    if not os.path.isdir(output_path):
-        os.mkdir(output_path)
-
-    output_year_path = os.path.join(output_path, str(year))
-    if not os.path.isdir(output_year_path):
-        os.mkdir(output_year_path)
-
-    output_month_path = os.path.join(output_year_path, str(month))
-    if not os.path.isdir(output_month_path):
-        os.mkdir(output_month_path)
-
-    output_day_path = os.path.join(output_month_path, str(day))
-    if not os.path.isdir(output_day_path):
-        os.mkdir(output_day_path)
 
     return None
 
