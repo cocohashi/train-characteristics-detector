@@ -33,7 +33,6 @@ class CharDetector(SignalProcessor):
         self.positive_direction = config['schema']['positive-direction']
         self.negative_direction = config['schema']['negative-direction']
 
-        self.directions = []
         self.direction = ""
         self.rail_id = None
         self.speed = 0
@@ -205,7 +204,7 @@ class CharDetector(SignalProcessor):
 
     def get_direction(self):
         slopes = [section['slope'] for section in self.linear_reg_params]
-        self.directions = [self.positive_direction if m > 0 else self.negative_direction for m in slopes]
+        self.direction = [self.positive_direction if m > 0 else self.negative_direction for m in slopes][0]
 
     @staticmethod
     def get_psd(data, fs=1000):
@@ -218,7 +217,6 @@ class CharDetector(SignalProcessor):
 
     def get_rail_id(self):
         self.rail_id = np.argmax([self.get_psd(x) for x in self.rail_view])
-        self.direction = self.directions[self.rail_id]
 
     def get_speed(self, d_eff=470 / 110, dec=3, f=3.6):
         dt = self.dt
