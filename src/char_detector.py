@@ -274,6 +274,8 @@ class CharDetector(SignalProcessor):
         for data_dict in self.base_data:
             base_train_ids = data_dict.get('data')
             train_id = data_dict.get('train-id')
+            train_class = data_dict.get('train-class')
             confidence = self.get_train_id_confidence(base_train_ids)
-            results.append({"confidence": confidence, "train-id": train_id, "method": "gaussian"})
+            results.append(
+                {"confidence": confidence, "train-id": train_id, "train-class": train_class, "method": "gaussian"})
         return max(results, key=lambda x: x['confidence'])

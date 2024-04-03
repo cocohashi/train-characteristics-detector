@@ -66,14 +66,19 @@ day_path = os.path.join(data_path_ext, str(year), f"{month:02}", f"{day:02}")
 output_path = os.path.join(data_path_ext, "output")
 base_path = os.path.join(data_path, "base")
 
-# Train-id's
-train_ids = [
-    "S-102-6p",
-    "S-102-8p",
-    "S-103-u",
-    "S-103-d",
-    "S-104"
-]
+# Tran classification flag
+CLASSIFY_TRAINS = True
+
+# Train-map
+train_map = {
+    1: "S-102-6p",
+    2: "S-102-8p",
+    3: "S-103-u",
+    4: "S-103-d",
+    5: "S-104"
+}
+train_ids = list(train_map.keys())
+train_classes = list(train_map.values())
 
 # Train Characteristic Schema
 train_char_schema: dict[str, str | None] = {
@@ -87,10 +92,9 @@ train_char_schema: dict[str, str | None] = {
     "rail-id": None,
     "train-id": None,
     "confidence": None,
-    "train-ids": train_ids
+    "train-ids": train_ids,
+    # "train-map": train_map
 }
-
-BASE_TRAIN_IDS = True
 
 # Signal processing
 config = {
@@ -169,28 +173,32 @@ def make_data_dirs():
 
 
 def get_and_check_base_data():
-    global BASE_TRAIN_IDS
-    base_train_ids = [dr for dr in os.listdir(base_path)]
+    global CLASSIFY_TRAINS
+    base_path_train_class_pool = [dr for dr in os.listdir(base_path)]
 
     # Not found train-track directories
-    if len(base_train_ids) < 1:
+    if len(base_path_train_class_pool) < 1:
         logger.warning(f"Base path is empty. Train-id cannot be computed.")
         logger.warning(f"Base path: {base_path}")
-        BASE_TRAIN_IDS = False
+        CLASSIFY_TRAINS = False
 
     else:
-        for not_found_dir in list(set(train_ids) - set(base_train_ids)):
+        for not_found_dir in list(set(train_classes) - set(base_path_train_class_pool)):
             logger.warning(f" '{not_found_dir}' train-id defined and not found")
-            BASE_TRAIN_IDS = False
+            CLASSIFY_TRAINS = False
 
-    logger.info(f"Compute Train Id's (BASE_TRAIN_IDS): {BASE_TRAIN_IDS}")
+        for ignore_dir in list(set(base_path_train_class_pool) - set(train_classes)):
+            logger.warning(f" '{ignore_dir}' is defined in base-path but not in specs. It will be ignored.")
+            CLASSIFY_TRAINS = False
+
+    logger.info(f"CLASSIFY_TRAINS: {CLASSIFY_TRAINS}")
 
     # Get Base Train-Id's data
-    if BASE_TRAIN_IDS:
+    if CLASSIFY_TRAINS:
         base_data = []
-        for train_id in base_train_ids:
-            train_id_path = os.path.join(base_path, train_id)
-            base_filenames = [file for file in os.listdir(train_id_path) if
+        for i, train_class in enumerate(train_classes):
+            train_class_path = os.path.join(base_path, train_class)
+            base_filenames = [file for file in os.listdir(train_class_path) if
                               file.split('.')[-1] == "npy"]
             # --- Debug ---
             # logger.info(f"Files for {train_id}\n{base_filenames}")
@@ -198,11 +206,11 @@ def get_and_check_base_data():
 
             base_train_ids = []
             for base_filename in base_filenames:
-                filename_path = os.path.join(train_id_path, base_filename)
+                filename_path = os.path.join(train_class_path, base_filename)
                 base_train_id_data = np.load(filename_path)
                 base_train_ids.append(base_train_id_data)
 
-            base_data.append({"data": base_train_ids, "train-id": train_id})
+            base_data.append({"data": base_train_ids, "train-id": train_ids[i], "train-class": train_class})
     else:
         base_data = None
 
@@ -247,7 +255,9 @@ def get_train_characteristics(data: np.array, base_data: list = base_data, schem
         # logger.info(f"train_id_info: {train_id_info}")
         schema.update({
             "train-id": train_id_info['train-id'],
-            "confidence": train_id_info['confidence']
+            "confidence": train_id_info['confidence'],
+            # "train-class": train_id_info['train-class']
+            "train-class": "Pending to verification"
         })
 
     return {"train_char": schema, "signal_processor": signal_processor, "char_detector": char_detector}
