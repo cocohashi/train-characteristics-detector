@@ -255,7 +255,7 @@ def get_train_characteristics(data: np.array, base_data: list = base_data, schem
             "train-class": "Pending to be verified"
         })
 
-    return {"train_char": schema, "signal_processor": signal_processor, "char_detector": char_detector}
+    return {"train-char": schema, "signal-processor": signal_processor, "char-detector": char_detector}
 
 
 if __name__ == "__main__":
@@ -288,9 +288,9 @@ if __name__ == "__main__":
     output = get_train_characteristics(data_loader.data)
 
     # Destructuring
-    train_char = output['train_char']
-    signal_processor = output['signal_processor']
-    char_detector = output['char_detector']
+    train_char = output['train-char']
+    signal_processor = output['signal-processor']
+    char_detector = output['char-detector']
 
     # Debug
     if args.debug:
