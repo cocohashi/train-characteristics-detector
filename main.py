@@ -257,7 +257,7 @@ def get_train_characteristics(data: np.array, base_data: list = base_data, schem
             "train-id": train_id_info['train-id'],
             "confidence": train_id_info['confidence'],
             # "train-class": train_id_info['train-class']
-            "train-class": "Pending to verification"
+            "train-class": "Pending to be verified"
         })
 
     return {"train_char": schema, "signal_processor": signal_processor, "char_detector": char_detector}
