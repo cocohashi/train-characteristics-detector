@@ -48,7 +48,11 @@ class DataLoader:
 
     # SERIALIZE JSON
     # ///////////////////////////////////////////////////////////////
+    def convert_dict_values_to_str(self):
+        self.items = {k: str(v) for k, v in self.items.items()}
+
     def serialize(self):
+        self.convert_dict_values_to_str()
         # WRITE JSON FILE
         with open(self.fullpath, "w", encoding="utf-8") as write:
             json.dump(self.items, write, indent=4)

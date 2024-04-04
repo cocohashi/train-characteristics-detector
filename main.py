@@ -24,6 +24,9 @@ parser.add_argument(
     "-d", "--debug", action="store_true", help="Debug Mode"
 )
 parser.add_argument(
+    "-s", "--serialize", action="store_true", help="Serialize JSON Data"
+)
+parser.add_argument(
     "-rw", "--show-raw-wf", action="store_true", help="Show Raw Waterfall"
 )
 parser.add_argument(
@@ -56,7 +59,7 @@ project_name = "MC"
 file_extension = "npy"  # Only "json" and "npy" allowed
 year = 2023
 month = 3
-day = 10
+day = 8
 
 # Data Paths
 root_path = os.path.abspath(os.path.join(os.getcwd(), "./.."))
@@ -66,7 +69,7 @@ day_path = os.path.join(data_path_ext, str(year), f"{month:02}", f"{day:02}")
 output_path = os.path.join(data_path_ext, "output")
 base_path = os.path.join(data_path, "base")
 
-# Tran classification flag
+# Train classification flag
 CLASSIFY_TRAINS = True
 
 # Train-map
@@ -95,6 +98,9 @@ train_char_schema: dict[str, str | None] = {
     "train-ids": train_ids,
     # "train-map": train_map
 }
+
+# Output key were serialize data. This key may exist or not in input data.
+output_key = "info"
 
 # Signal processing
 config = {
@@ -138,8 +144,8 @@ config = {
     },
 
     "schema": {
-        "positive-direction": "Cordoba - Malaga",
-        "negative-direction": "Malaga - Cordoba"
+        "positive-direction": "Cordoba -> Malaga",
+        "negative-direction": "Malaga -> Cordoba"
     }
 }
 
@@ -155,16 +161,19 @@ def make_data_dirs():
         os.makedirs(day_path)
 
     # Output Day Path
-    # output_day_path = os.path.join(output_path,  str(year), str(month), str(day))
-    # logger.info(f"output_day_path: {output_day_path}")
-    # if not os.path.isdir(output_day_path):
-    #     os.makedirs(output_day_path)
+    output_day_path = os.path.join(output_path, str(year), str(month), str(day))
+    logger.info(f"output_day_path: {output_day_path}")
+    if not os.path.isdir(output_day_path):
+        os.makedirs(output_day_path)
 
     # Base path
     if not os.path.isdir(base_path):
         os.mkdir(base_path)
 
-    return None
+    return {"data_path_ext": data_path_ext,
+            "day_path": day_path,
+            "output_day_path": output_day_path,
+            "base_path": base_path}
 
 
 def get_and_check_base_data():
@@ -212,7 +221,7 @@ def get_and_check_base_data():
     return base_data
 
 
-make_data_dirs()
+dir_paths = make_data_dirs()
 base_data = get_and_check_base_data()
 
 
@@ -334,7 +343,19 @@ if __name__ == "__main__":
         data_plotter = DataPlotter(char_detector.train_track, **config['plot-train-track'])
         data_plotter.plot_train_track()
 
-    # Serialize data
-    # data_loader.items.update(train_char)
-    # data.fullpath = os.path.join(output_day_path, filename)
-    # data.serialize()
+    if args.serialize:
+        logger.info("Serializing data...")
+        output_day_path = dir_paths['output_day_path']
+        if data_loader.items.get(output_key):
+            data_loader.items[output_key].update(train_char)
+            data_loader.fullpath = os.path.join(output_day_path, filename)
+            data_loader.serialize()
+        else:
+            logger.warning(f"output_key: {output_key} wasn't created. Serializing data to JSON anyway.")
+            data_loader.items.update({output_key: train_char})
+            data_loader.fullpath = os.path.join(output_day_path, filename)
+            data_loader.serialize()
+        logger.info(
+            f"Serialized.\n"
+            f"Train characteristics updated in: '{filename}' JSON file, saved in path:"
+            f"\n{output_day_path}")
