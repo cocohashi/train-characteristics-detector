@@ -3,6 +3,7 @@ import argparse
 import logging
 import matplotlib.pyplot as plt
 import numpy as np
+from datetime import datetime
 
 from src.data_loader import DataLoader
 from src.signal_processor import SignalProcessor
@@ -19,6 +20,9 @@ logger = logging.getLogger(__name__)
 parser = argparse.ArgumentParser(description="Tool to Compute Train Characteristics")
 parser.add_argument(
     "-f", "--filename", type=str, help="Input Filename", required=True
+)
+parser.add_argument(
+    "-dt", "--date", type=str, help="Input Date in '%Y-%m-%d' format", required=False
 )
 parser.add_argument(
     "-d", "--debug", action="store_true", help="Debug Mode"
@@ -59,7 +63,7 @@ project_name = "MC"
 file_extension = "npy"  # Only "json" and "npy" allowed
 year = 2023
 month = 3
-day = 8
+day = 9
 
 # Data Paths
 root_path = os.path.abspath(os.path.join(os.getcwd(), "./.."))
@@ -270,6 +274,15 @@ def get_train_characteristics(data: np.array, base_data: list = base_data, schem
 if __name__ == "__main__":
     args = parser.parse_args()
     filename = args.filename
+
+    # Check date
+    if args.date:
+        date_format = "%Y-%m-%d"
+        assert (
+            bool(datetime.strptime(args.date, date_format))
+        ), f"date does not follows {date_format} date format."
+        year, month, day = [args.date.split('-')[x] for x in range(3)]
+        day_path = os.path.join(data_path_ext, str(year), f"{int(month):02}", f"{int(day):02}")
 
     # Check data entry
     assert (
