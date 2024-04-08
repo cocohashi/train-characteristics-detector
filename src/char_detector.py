@@ -29,9 +29,12 @@ class CharDetector(SignalProcessor):
         self.mask_width = config['char-detector']['mask-width'] / self.N
         self.thr_perc = config['char-detector']['thr-perc']
         self.mf_window = config['char-detector']['mf-window']
+        self.no_train_event_thr = config['char-detector']['no-train-event-thr']
         self.method = config['char-detector']['method']
         self.positive_direction = config['schema']['positive-direction']
         self.negative_direction = config['schema']['negative-direction']
+        self.event = config['event']['train']
+        self.no_train_event = config['event']['no-train']
 
         self.direction = ""
         self.rail_id = None
@@ -39,6 +42,7 @@ class CharDetector(SignalProcessor):
         self.speed_error = 0
         self.train_track = []
         self.base_data = None
+        self.rail_view = None
 
         # Slice waterfall in different spatial sections
         self.sections = self.get_sections()
@@ -49,24 +53,31 @@ class CharDetector(SignalProcessor):
 
         # Get mask of each section
         self.mean_filter_sections = [self.mean_filter(data) for data in self.thr_sections]
-        self.coordinates_sections = [self.one_hot_to_coordinates(data) for data in self.mean_filter_sections]
-        self.linear_reg_params = [self.linear_regression(coordinate) for coordinate in self.coordinates_sections]
-        self.mask_sections = [self.get_mask(self.thr_sections[x], **self.linear_reg_params[x]) for x in
-                              range(self.section_num)]
 
-        # Filter data again using the filter defined in Wn-class
-        self.filtered_data = signal_processor.butterworth_filter()  # Apply Cut-off freq: Wn-class
-        self.sections = self.get_sections()
+        # Check 'NO TRAIN' event
+        if self.check_event(event=self.no_train_event):
+            self.event = self.no_train_event
 
-        # Apply mask to each section
-        self.masked_sections = [np.multiply(self.sections[x], self.mask_sections[x]) for x in range(self.section_num)]
-        self.masked_sections = [self.auto_crop(data) for data in self.masked_sections]
-        self.rail_view = [self.filter_zeros(data) for data in self.masked_sections]
+        else:
+            self.coordinates_sections = [self.one_hot_to_coordinates(data) for data in self.mean_filter_sections]
+            self.linear_reg_params = [self.linear_regression(coordinate) for coordinate in self.coordinates_sections]
+            self.mask_sections = [self.get_mask(self.thr_sections[x], **self.linear_reg_params[x]) for x in
+                                  range(self.section_num)]
 
-        self.get_direction()
-        self.get_rail_id()
-        self.get_speed()
-        self.get_train_track()
+            # Filter data again using the filter defined in Wn-class
+            self.filtered_data = signal_processor.butterworth_filter()  # Apply Cut-off freq: Wn-class
+            self.sections = self.get_sections()
+
+            # Apply mask to each section
+            self.masked_sections = [np.multiply(self.sections[x], self.mask_sections[x]) for x in
+                                    range(self.section_num)]
+            self.masked_sections = [self.auto_crop(data) for data in self.masked_sections]
+            self.rail_view = [self.filter_zeros(data) for data in self.masked_sections]
+
+            self.get_direction()
+            self.get_rail_id()
+            self.get_speed()
+            self.get_train_track()
 
     def get_sections(self):
         """
@@ -122,6 +133,11 @@ class CharDetector(SignalProcessor):
         """
         column_filter = ndimage.median_filter(data, size=self.mf_window, axes=1)
         return ndimage.median_filter(column_filter, size=self.mf_window, axes=0)
+
+    def check_event(self, event):
+        if event == self.no_train_event:
+            mean = np.mean([np.mean(self.mean_filter_sections[x]) for x in range(self.section_num)])
+            return bool(mean < self.no_train_event_thr)
 
     def one_hot_to_coordinates(self, data):
         """

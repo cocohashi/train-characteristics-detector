@@ -124,7 +124,14 @@ config = {
         "mask-width": 12000,
         "thr-perc": 0.1,
         "mf-window": 20,
+        "no-train-event-thr": 0.01,
         "method": "gaussian"  # Allowed values only: "exponential", "gaussian", "reciprocal", "custom"
+    },
+
+    # Events
+    "event": {
+        "train": "train",
+        "no-train": "no-train"
     },
 
     # Data Plotting
@@ -251,7 +258,7 @@ def get_train_characteristics(data: np.array, base_data: list = base_data, schem
     # Update given schema with computed train characteristic values
     schema.update({
         "status": "computed",
-        "event": "TRAIN",
+        "event": char_detector.event,
         "direction": char_detector.direction,
         "rail-id": char_detector.rail_id,
         "speed": char_detector.speed,
@@ -259,14 +266,14 @@ def get_train_characteristics(data: np.array, base_data: list = base_data, schem
 
     if base_data:
         char_detector.base_data = base_data
-        train_id_info = char_detector.get_train_id_info()
-        # logger.info(f"train_id_info: {train_id_info}")
-        schema.update({
-            "train-id": train_id_info['train-id'],
-            "confidence": train_id_info['confidence'],
-            # "train-class": train_id_info['train-class']
-            "train-class": "Pending to be verified"
-        })
+        if char_detector.event == config['event']['train']:
+            train_id_info = char_detector.get_train_id_info()
+            schema.update({
+                "train-id": train_id_info['train-id'],
+                "confidence": train_id_info['confidence'],
+                # "train-class": train_id_info['train-class']
+                "train-class": "Pending to be verified"
+            })
 
     return {"train-char": schema, "signal-processor": signal_processor, "char-detector": char_detector}
 
@@ -348,8 +355,9 @@ if __name__ == "__main__":
 
     if args.show_rail_view:
         section = config['plot-matrix']['section']
-        data_plotter = DataPlotter(char_detector.rail_view[section], **config['plot-matrix'])
-        data_plotter.plot_matrix()
+        if char_detector.rail_view:
+            data_plotter = DataPlotter(char_detector.rail_view[section], **config['plot-matrix'])
+            data_plotter.plot_matrix()
 
     if args.show_train_track:
         config['plot-train-track']['title'] = f"{config['plot-train-track']['title']} - filename: {filename}"
