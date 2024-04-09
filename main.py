@@ -127,6 +127,7 @@ config = {
         "no-train-event-thr": 0.01,
         "double-train-event-thr": 0.2,
         "double-train-event-max-dist": 1000,
+        "speed-limit": 400,
         "method": "gaussian"  # Allowed values only: "exponential", "gaussian", "reciprocal", "custom"
     },
 
@@ -134,12 +135,13 @@ config = {
     "event": {
         "train": "train",
         "no-train": "no-train",
-        "double-train": "double-train"
+        "double-train": "double-train",
+        "unknown": "unknown"
     },
 
     # Data Plotting
     "plot-matrix": {
-        "section": 1,
+        "section": 0,
         "vmin": None,
         "vmax": None,
         "xlabel": "x-axis (samples)",

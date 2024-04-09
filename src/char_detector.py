@@ -32,13 +32,15 @@ class CharDetector(SignalProcessor):
         self.no_train_event_thr = config['char-detector']['no-train-event-thr']
         self.double_train_event_thr = config['char-detector']['double-train-event-thr']
         self.double_train_event_max_dist = config['char-detector']['double-train-event-max-dist']
-
+        self.speed_limit = config['char-detector']['speed-limit']
         self.method = config['char-detector']['method']
+
         self.positive_direction = config['schema']['positive-direction']
         self.negative_direction = config['schema']['negative-direction']
         self.event = config['event']['train']
         self.no_train_event = config['event']['no-train']
         self.double_train_event = config['event']['double-train']
+        self.unknown_event = config['event']['unknown']
 
         self.direction = ""
         self.rail_id = None
@@ -84,6 +86,9 @@ class CharDetector(SignalProcessor):
             self.get_rail_id()
             self.get_speed()
             self.get_train_track()
+
+            if self.speed > self.speed_limit:
+                self.event = self.unknown_event
 
     def get_sections(self):
         """
