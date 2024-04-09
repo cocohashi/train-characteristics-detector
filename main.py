@@ -131,7 +131,8 @@ config = {
         "no-train-event-thr": 0.02,
         "double-train-event-thr": 0.2,
         "double-train-event-max-dist": 1000,
-        "speed-limit": 400,
+        "upper-speed-limit": 400,
+        "lower-speed-limit": 150,
         "method": "gaussian"  # Allowed values only: "exponential", "gaussian", "reciprocal", "custom"
     },
 
@@ -140,6 +141,7 @@ config = {
         "train": "train",
         "no-train": "no-train",
         "double-train": "double-train",
+        "slow-train": "slow-train",
         "unknown": "unknown"
     },
 
