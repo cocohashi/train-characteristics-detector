@@ -25,6 +25,10 @@ parser.add_argument(
     "-dt", "--date", type=str, help="Input Date in '%Y-%m-%d' format", required=False
 )
 parser.add_argument(
+    "-sec", "--section", type=int, help="Section that would be plotted", required=False
+)
+
+parser.add_argument(
     "-d", "--debug", action="store_true", help="Debug Mode"
 )
 parser.add_argument(
@@ -286,6 +290,7 @@ def get_train_characteristics(data: np.array, base_data: list = base_data, schem
 if __name__ == "__main__":
     args = parser.parse_args()
     filename = args.filename
+    section = None
 
     # Check date
     if args.date:
@@ -295,6 +300,13 @@ if __name__ == "__main__":
         ), f"date does not follows {date_format} date format."
         year, month, day = [args.date.split('-')[x] for x in range(3)]
         day_path = os.path.join(data_path_ext, str(year), f"{int(month):02}", f"{int(day):02}")
+
+    if args.section:
+        section = args.section
+        section_num = config['char-detector']['section-num']
+        assert (
+            bool(section < section_num)
+        ), f"The given section should be less than {section_num}"
 
     # Check data entry
     assert (
@@ -339,27 +351,32 @@ if __name__ == "__main__":
         data_plotter.plot_matrix()
 
     if args.show_sobel_wf:
-        section = config['plot-matrix']['section']
+        if not section:
+            section = config['plot-matrix']['section']
         data_plotter = DataPlotter(char_detector.sobel_sections[section], **config['plot-matrix'])
         data_plotter.plot_matrix()
 
     if args.show_threshold_wf:
-        section = config['plot-matrix']['section']
+        if not section:
+            section = config['plot-matrix']['section']
         data_plotter = DataPlotter(char_detector.thr_sections[section], **config['plot-matrix'])
         data_plotter.plot_matrix()
 
     if args.show_mean_filter_wf:
-        section = config['plot-matrix']['section']
+        if not section:
+            section = config['plot-matrix']['section']
         data_plotter = DataPlotter(char_detector.mean_filter_sections[section], **config['plot-matrix'])
         data_plotter.plot_matrix()
 
     if args.show_mask_wf:
-        section = config['plot-matrix']['section']
+        if not section:
+            section = config['plot-matrix']['section']
         data_plotter = DataPlotter(char_detector.mask_sections[section], **config['plot-matrix'])
         data_plotter.plot_matrix()
 
     if args.show_rail_view:
-        section = config['plot-matrix']['section']
+        if not section:
+            section = config['plot-matrix']['section']
         if char_detector.rail_view:
             data_plotter = DataPlotter(char_detector.rail_view[section], **config['plot-matrix'])
             data_plotter.plot_matrix()
