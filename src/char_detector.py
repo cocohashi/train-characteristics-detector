@@ -94,7 +94,8 @@ class CharDetector(SignalProcessor):
         n = self.section_num
         return [self.filtered_data[:, x * s_lim: (x + 1) * s_lim] for x in range(n)]
 
-    def sobel_filter(self, data, sigma=1):
+    @staticmethod
+    def sobel_filter(data, sigma=1):
         """
         Applies a sobel filter that highlights vertical and horizontal borders for a given 2D numpy array.
         :param data Waterfall matrix Spatial Section
@@ -154,7 +155,8 @@ class CharDetector(SignalProcessor):
                     results.append(np.sum(t_dist))
             return bool(np.mean(results) > self.double_train_event_thr)
 
-    def one_hot_to_coordinates(self, data):
+    @staticmethod
+    def one_hot_to_coordinates(data):
         """
         Obtains x and y coordinate axis from one-hot-encoded 2D array matrix
         :param data: 2D numpy array (in one-hot-encoding format)
@@ -164,7 +166,8 @@ class CharDetector(SignalProcessor):
         """
         return np.array(list(map(list, (zip(*np.where(data == 1))))))
 
-    def linear_regression(self, data):
+    @staticmethod
+    def linear_regression(data):
         """
         Computes linear regression from a given x and y coordinates
         :param data: 2D numpy array of (N,2) shape containing x and y coordinates
@@ -206,7 +209,8 @@ class CharDetector(SignalProcessor):
 
         return mask
 
-    def auto_crop(self, data):
+    @staticmethod
+    def auto_crop(data):
         """
         Deletes all empty rows and columns
         :param data: 2D numpy array
