@@ -124,7 +124,7 @@ config = {
         "mask-width": 12000,
         "thr-perc": 0.1,
         "mf-window": 20,
-        "no-train-event-thr": 0.01,
+        "no-train-event-thr": 0.02,
         "double-train-event-thr": 0.2,
         "double-train-event-max-dist": 1000,
         "speed-limit": 400,
