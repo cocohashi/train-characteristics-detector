@@ -125,13 +125,16 @@ config = {
         "thr-perc": 0.1,
         "mf-window": 20,
         "no-train-event-thr": 0.01,
+        "double-train-event-thr": 0.2,
+        "double-train-event-max-dist": 1000,
         "method": "gaussian"  # Allowed values only: "exponential", "gaussian", "reciprocal", "custom"
     },
 
     # Events
     "event": {
         "train": "train",
-        "no-train": "no-train"
+        "no-train": "no-train",
+        "double-train": "double-train"
     },
 
     # Data Plotting

@@ -30,11 +30,15 @@ class CharDetector(SignalProcessor):
         self.thr_perc = config['char-detector']['thr-perc']
         self.mf_window = config['char-detector']['mf-window']
         self.no_train_event_thr = config['char-detector']['no-train-event-thr']
+        self.double_train_event_thr = config['char-detector']['double-train-event-thr']
+        self.double_train_event_max_dist = config['char-detector']['double-train-event-max-dist']
+
         self.method = config['char-detector']['method']
         self.positive_direction = config['schema']['positive-direction']
         self.negative_direction = config['schema']['negative-direction']
         self.event = config['event']['train']
         self.no_train_event = config['event']['no-train']
+        self.double_train_event = config['event']['double-train']
 
         self.direction = ""
         self.rail_id = None
@@ -58,6 +62,8 @@ class CharDetector(SignalProcessor):
         if self.check_event(event=self.no_train_event):
             self.event = self.no_train_event
 
+        elif self.check_event(event=self.double_train_event):
+            self.event = self.double_train_event
         else:
             self.coordinates_sections = [self.one_hot_to_coordinates(data) for data in self.mean_filter_sections]
             self.linear_reg_params = [self.linear_regression(coordinate) for coordinate in self.coordinates_sections]
@@ -138,6 +144,15 @@ class CharDetector(SignalProcessor):
         if event == self.no_train_event:
             mean = np.mean([np.mean(self.mean_filter_sections[x]) for x in range(self.section_num)])
             return bool(mean < self.no_train_event_thr)
+        if event == self.double_train_event:
+            results = []
+            for section in range(self.section_num):
+                for pos in range(self.mean_filter_sections[section].shape[1]):
+                    col_values = self.mean_filter_sections[section][:, pos]
+                    t_diff = np.diff(col_values.nonzero()[0])
+                    t_dist = np.array([1 if x > self.double_train_event_max_dist else 0 for x in t_diff])
+                    results.append(np.sum(t_dist))
+            return bool(np.mean(results) > self.double_train_event_thr)
 
     def one_hot_to_coordinates(self, data):
         """
