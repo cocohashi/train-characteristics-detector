@@ -133,6 +133,7 @@ config = {
         "double-train-event-max-dist": 1000,
         "upper-speed-limit": 400,
         "lower-speed-limit": 150,
+        "decimal": 3,
         "method": "gaussian"  # Allowed values only: "exponential", "gaussian", "reciprocal", "custom"
     },
 

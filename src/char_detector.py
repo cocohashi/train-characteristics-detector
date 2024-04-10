@@ -34,6 +34,7 @@ class CharDetector(SignalProcessor):
         self.double_train_event_max_dist = config['char-detector']['double-train-event-max-dist']
         self.upper_speed_limit = config['char-detector']['upper-speed-limit']
         self.lower_speed_limit = config['char-detector']['lower-speed-limit']
+        self.decimal = config['char-detector']['decimal']
         self.method = config['char-detector']['method']
 
         self.positive_direction = config['schema']['positive-direction']
@@ -86,7 +87,7 @@ class CharDetector(SignalProcessor):
 
             self.get_direction()
             self.get_rail_id()
-            self.get_speed()
+            self.get_speed(decimal=self.decimal)
             self.get_train_track()
 
             if self.speed > self.upper_speed_limit:
@@ -262,13 +263,13 @@ class CharDetector(SignalProcessor):
     def get_rail_id(self):
         self.rail_id = np.argmax([self.get_psd(x) for x in self.rail_view])
 
-    def get_speed(self, d_eff=470 / 110, dec=3, f=3.6):
+    def get_speed(self, d_eff=470 / 110, decimal=3, f=3.6):
         dt = self.dt
         slopes = [x['slope'] for x in self.linear_reg_params]
-        _get_speed: Callable[[int], int] = lambda slope: round(d_eff * f / (slope * dt), dec)
+        _get_speed: Callable[[int], int] = lambda slope: round(d_eff * f / (slope * dt), decimal)
         speeds = [abs(_get_speed(slope)) for slope in slopes]
-        self.speed = np.mean(speeds)
-        self.speed_error = round(self.speed - min(speeds), dec)
+        self.speed = round(np.mean(speeds), decimal)
+        self.speed_error = round(self.speed - min(speeds), decimal)
 
     @staticmethod
     def normalize(a, b=2, c=1):
@@ -289,7 +290,7 @@ class CharDetector(SignalProcessor):
     def get_confidence(val: int,
                        r: int = 2,
                        best_dist: float = 0.5,
-                       decimal: int = 5,
+                       decimal: int = 3,
                        method: str = "gaussian"):
 
         if method == "exponential":
@@ -309,7 +310,7 @@ class CharDetector(SignalProcessor):
         for base_train_id in base_train_ids:
             distance = dtw.distance_fast(self.train_track, base_train_id, use_pruning=True)
             dtw_distances.append(distance)
-        return self.get_confidence(np.mean(dtw_distances), method=self.method)
+        return self.get_confidence(np.mean(dtw_distances), method=self.method, decimal=self.decimal)
 
     def get_train_id_info(self):
         results = []
