@@ -47,6 +47,8 @@ class CharDetector(SignalProcessor):
 
         self.direction = ""
         self.rail_id = None
+        self.energy_diff = None
+        self.rail_id_confidence = None
         self.speed = 0
         self.speed_error = 0
         self.train_track = []
@@ -87,6 +89,7 @@ class CharDetector(SignalProcessor):
 
             self.get_direction()
             self.get_rail_id()
+            self.get_rail_id_confidence()
             self.get_speed(decimal=self.decimal)
             self.get_train_track()
 
@@ -263,10 +266,16 @@ class CharDetector(SignalProcessor):
     def get_rail_id(self):
         self.rail_id = np.argmax([self.get_psd(x) for x in self.rail_view])
 
+    def get_rail_id_confidence(self, slope_conf=0.4, pos_conf=10):
+        energy_sections = [self.get_psd(x) for x in self.rail_view]
+        _get_confidence: Callable[[int], int] = lambda x: 1 / (1 + np.exp(-1 * slope_conf * (x - pos_conf)))
+        self.energy_diff = abs(abs(energy_sections[0]) - abs(energy_sections[1]))
+        self.rail_id_confidence = round(_get_confidence(self.energy_diff), self.decimal)
+
     def get_speed(self, d_eff=470 / 110, decimal=3, f=3.6):
         dt = self.dt
         slopes = [x['slope'] for x in self.linear_reg_params]
-        _get_speed: Callable[[int], int] = lambda slope: round(d_eff * f / (slope * dt), decimal)
+        _get_speed: Callable[[int], int] = lambda slope: d_eff * f / (slope * dt)
         speeds = [abs(_get_speed(slope)) for slope in slopes]
         self.speed = round(np.mean(speeds), decimal)
         self.speed_error = round(self.speed - min(speeds), decimal)

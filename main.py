@@ -101,8 +101,9 @@ train_char_schema: dict[str, str | None] = {
     "speed-magnitude": "kmh",
     "speed-error": None,
     "rail-id": None,
+    "rail-id-confidence": None,
     "train-id": None,
-    "confidence": None,
+    "train-id-confidence": None,
     "train-ids": train_ids,
     # "train-map": train_map
 }
@@ -273,6 +274,7 @@ def get_train_characteristics(data: np.array, base_data: list = base_data, schem
         "event": char_detector.event,
         "direction": char_detector.direction,
         "rail-id": char_detector.rail_id,
+        "rail-id-confidence": char_detector.rail_id_confidence,
         "speed": char_detector.speed,
         "speed-error": char_detector.speed_error})
 
@@ -282,7 +284,7 @@ def get_train_characteristics(data: np.array, base_data: list = base_data, schem
             train_id_info = char_detector.get_train_id_info()
             schema.update({
                 "train-id": train_id_info['train-id'],
-                "confidence": train_id_info['confidence'],
+                "train-id-confidence": train_id_info['confidence'],
                 # "train-class": train_id_info['train-class']
                 "train-class": "Pending to be verified"
             })
