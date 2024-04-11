@@ -319,7 +319,7 @@ class CharDetector(SignalProcessor):
         for base_train_class_data in base_train_class_data_list:
             distance = dtw.distance_fast(self.train_track, base_train_class_data, use_pruning=True)
             dtw_distances.append(distance)
-        return self.get_confidence(np.mean(dtw_distances), method=self.method, decimal=self.decimal)
+        return self.get_confidence(np.min(dtw_distances), method=self.method, decimal=self.decimal)
 
     def get_train_id_info(self):
         results = []
