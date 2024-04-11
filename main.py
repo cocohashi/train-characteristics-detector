@@ -77,8 +77,9 @@ day_path = os.path.join(data_path_ext, str(year), f"{month:02}", f"{day:02}")
 output_path = os.path.join(data_path_ext, "output")
 base_path = os.path.join(data_path, "base")
 
-# Train classification flag
+# Config Flags
 CLASSIFY_TRAINS = True
+TRAIN_CLASS_VERIFIED = False
 
 # Train-map
 train_map = {
@@ -285,9 +286,11 @@ def get_train_characteristics(data: np.array, base_data: list = base_data, schem
             schema.update({
                 "train-id": train_id_info['train-id'],
                 "train-id-confidence": train_id_info['confidence'],
-                # "train-class": train_id_info['train-class']
-                "train-class": "Pending to be verified"
             })
+            if TRAIN_CLASS_VERIFIED:
+                schema.update({"train-class": train_id_info['train-class']})
+            else:
+                schema.update({"train-class": "Pending to be verified"})
 
     return {"train-char": schema, "signal-processor": signal_processor, "char-detector": char_detector}
 
