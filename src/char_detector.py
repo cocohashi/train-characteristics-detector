@@ -314,20 +314,20 @@ class CharDetector(SignalProcessor):
             raise ValueError(f"method={method} is not supported")
         return result
 
-    def get_train_id_confidence(self, base_train_ids):
+    def get_train_id_confidence(self, base_train_class_data_list):
         dtw_distances = []
-        for base_train_id in base_train_ids:
-            distance = dtw.distance_fast(self.train_track, base_train_id, use_pruning=True)
+        for base_train_class_data in base_train_class_data_list:
+            distance = dtw.distance_fast(self.train_track, base_train_class_data, use_pruning=True)
             dtw_distances.append(distance)
         return self.get_confidence(np.mean(dtw_distances), method=self.method, decimal=self.decimal)
 
     def get_train_id_info(self):
         results = []
         for data_dict in self.base_data:
-            base_train_ids = data_dict.get('data')
+            base_train_class_data_list = data_dict.get('data')
             train_id = data_dict.get('train-id')
             train_class = data_dict.get('train-class')
-            confidence = self.get_train_id_confidence(base_train_ids)
+            confidence = self.get_train_id_confidence(base_train_class_data_list)
             results.append(
                 {"confidence": confidence, "train-id": train_id, "train-class": train_class, "method": "gaussian"})
         return max(results, key=lambda x: x['confidence'])

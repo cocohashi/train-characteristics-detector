@@ -233,13 +233,13 @@ def get_and_check_base_data():
             # logger.info(f"Files for {train_id}\n{base_filenames}")
             # -------------
 
-            base_train_ids = []
+            base_train_class_data_list = []
             for base_filename in base_filenames:
                 filename_path = os.path.join(train_class_path, base_filename)
-                base_train_id_data = np.load(filename_path)
-                base_train_ids.append(base_train_id_data)
+                base_train_class_data = np.load(filename_path)
+                base_train_class_data_list.append(base_train_class_data)
 
-            base_data.append({"data": base_train_ids, "train-id": train_ids[i], "train-class": train_class})
+            base_data.append({"data": base_train_class_data_list, "train-id": train_ids[i], "train-class": train_class})
     else:
         base_data = None
 
