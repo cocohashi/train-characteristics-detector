@@ -93,7 +93,7 @@ train_ids = list(train_map.keys())
 train_classes = list(train_map.values())
 
 # Train Characteristic Schema
-train_char_schema: dict[str, str | None] = {
+train_char_schema = {
     "datetime": None,
     "event": None,
     "status": "not-computed",
@@ -338,6 +338,7 @@ if __name__ == "__main__":
     # Load data
     data_loader = DataLoader(file_path)
 
+    logger.info(data_loader.data.shape)
     # Get train characteristics
     output = get_train_characteristics(data_loader.data)
 

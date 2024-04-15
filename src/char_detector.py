@@ -151,8 +151,8 @@ class CharDetector(SignalProcessor):
         :param mf_window: mean filter windows length
         :return: 2D numpy array (in one-hot-encoding format)
         """
-        column_filter = ndimage.median_filter(data, size=self.mf_window, axes=1)
-        return ndimage.median_filter(column_filter, size=self.mf_window, axes=0)
+        column_filter = ndimage.median_filter(data, size=(1, self.mf_window))
+        return ndimage.median_filter(column_filter, size=(self.mf_window, 1))
 
     def check_event(self, event):
         if event == self.no_train_event:
