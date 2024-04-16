@@ -153,6 +153,8 @@ config = {
         "upper-speed-limit": 400,
         "lower-speed-limit": 150,
         "decimal": 3,
+        "train-confidence-perc-limit": 0.2,  # A classified train, with a confidence percentage value lower than
+        # this limit, will be considered as "unknown" train-class and train-id.
         "method": "gaussian"  # Allowed values only: "exponential", "gaussian", "reciprocal", "custom"
     },
 
@@ -300,6 +302,8 @@ def get_train_characteristics(data: np.array, base_data: list = base_data, schem
         char_detector.base_data = base_data
         if char_detector.event == config['event']['train']:
             train_id_info = char_detector.get_train_id_info()
+            if train_id_info['confidence'] < config['char-detector']['train-confidence-perc-limit']:
+                train_id_info.update({"train-id": "unknown", "train-class": "unknown"})
             schema.update({
                 "train-id": train_id_info['train-id'],
                 "train-id-confidence": train_id_info['confidence'],
