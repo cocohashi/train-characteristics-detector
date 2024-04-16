@@ -69,13 +69,24 @@ year = 2023
 month = 3
 day = 9
 
-# Data Paths
+# ----- Data Paths -----
 root_path = os.path.abspath(os.path.join(os.getcwd(), "./.."))
-data_path = os.path.join(root_path, "data", project_name)
-data_path_ext = os.path.join(data_path, file_extension)
-day_path = os.path.join(data_path_ext, str(year), f"{month:02}", f"{day:02}")
-output_path = os.path.join(data_path_ext, "output")
-base_path = os.path.join(data_path, "base")
+data_path_dev = os.path.join(root_path, "data", project_name)
+data_path_ext_dev = os.path.join(data_path_dev, file_extension)
+day_path = os.path.join(data_path_ext_dev, str(year), f"{month:02}", f"{day:02}")
+output_path = os.path.join(data_path_ext_dev, "output")
+base_path = os.path.join(data_path_dev, "base")
+
+# TODO: Dev base_path: "..data/{project_name}/{file_extension}"
+
+# ----- Development Path -----
+data_path = data_path_ext_dev
+# ----------------------------
+
+# ----- Production Path -----
+# data_path = ""
+# base_path = "" # optional
+# ----------------------------
 
 # Config Flags
 CLASSIFY_TRAINS = True
@@ -91,6 +102,12 @@ train_map = {
 }
 train_ids = list(train_map.keys())
 train_classes = list(train_map.values())
+
+# TODO:
+#  In base path we MUST create all directories defined in 'train_map', and store there each train's base values.
+#  Ex.
+#  base_path tran-id 1: "../data/{project_name}/{file_extension}/S-102-6p"
+#
 
 # Train Characteristic Schema
 train_char_schema = {
@@ -176,10 +193,10 @@ config = {
 
 
 # -----------------------------------------------------------------------------------------------------------------
-def make_data_dirs():
+def make_data_dirs(data_path=data_path):
     # Exterior Data Path
-    if not os.path.isdir(data_path_ext):
-        os.makedirs(data_path_ext)
+    if not os.path.isdir(data_path):
+        os.makedirs(data_path)
 
     # Input Day Path
     if not os.path.isdir(day_path):
@@ -195,7 +212,7 @@ def make_data_dirs():
     if not os.path.isdir(base_path):
         os.mkdir(base_path)
 
-    return {"data_path_ext": data_path_ext,
+    return {"data_path": data_path,
             "day_path": day_path,
             "output_day_path": output_day_path,
             "base_path": base_path}
@@ -307,7 +324,7 @@ if __name__ == "__main__":
             bool(datetime.strptime(args.date, date_format))
         ), f"date does not follows {date_format} date format."
         year, month, day = [args.date.split('-')[x] for x in range(3)]
-        day_path = os.path.join(data_path_ext, str(year), f"{int(month):02}", f"{int(day):02}")
+        day_path = os.path.join(data_path, str(year), f"{int(month):02}", f"{int(day):02}")
 
     if args.section:
         section = args.section
