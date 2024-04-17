@@ -205,6 +205,44 @@ def high_pass_filter(s,dt,fc):
     
     return filtered
 
+def get_report_json(train_info, filename, report_json={}):
+    logger.info('get report:: train_info:: %s'%train_info)
+    # get event    
+    event = train_info['event']
+    report_event_list = [event for event in report_json['event'].keys()]
+    logger.info('report_event_list: %s'%report_event_list)
+    
+    # get train-id
+    train_id = train_info['train-id']
+    train_ids_list = [train_id for train_id in report_json['train-id'].keys()]
+    logger.info('train_ids_list: %s'%train_ids_list)
+
+    
+    for report_event_type in report_event_list:
+        if event == report_event_type :    
+            actual_report_event = report_json.get('event')
+            report_event_train = actual_report_event.get(report_event_type )
+            report_event_train.append(filename)
+            report_event_train.sort()
+            actual_report_event.update({report_event_type: report_event_train})
+            report_json.update({"event" : actual_report_event})
+    
+    for report_train_id_type in train_ids_list:
+        if train_id == report_train_id_type :    
+            actual_report_train_id = report_json.get('train-id')
+            report_train = actual_report_train_id.get(report_train_id_type )
+            report_train.append(filename)
+            report_train.sort()
+            actual_report_train_id.update({report_train_id_type: report_train})
+            report_json.update({"train-id" : actual_report_train_id})
+
+
+    return report_json
+    
+    
+        
+            
+
 def generate_json_from_numpy(npy_day_folder, json_day_folder, json_image_day_folder, str_timestamp, now):
     
     # acquisition input data (hardcoded by the moment): 
@@ -249,9 +287,11 @@ def generate_json_from_numpy(npy_day_folder, json_day_folder, json_image_day_fol
         with open(json_filename, 'w') as f: 
             json.dump(json_dict, f, cls = NumpyArrayEncoder)
     except Exception as e:
-        logger.error(f'Error Saving JSON file: {traceback.format_exc()}')
+        logger.error('Error while saving json DATA  file: %s'%traceback.format_exc())
         
     logger.info('json file successfully created')
+    
+    # TODO: Helper characters: [],  {}
     
     # filter data to  plot: 
 
@@ -265,6 +305,67 @@ def generate_json_from_numpy(npy_day_folder, json_day_folder, json_image_day_fol
     
     plt.savefig(save_filename)
     plt.close()
+    
+    # save report info in report_files.json    
+    report_filename = "report_files.json"
+    report_path = os.path.join(json_day_folder, report_filename)
+    logger.info("repor_path: %s"%report_path)
+    logger.info(os.path.isfile(report_path))
+    
+    # report json
+    train_info = json_dict['info']
+    
+    if not os.path.isfile(report_path):
+        logger.info("Creating new report file...")
+        report_json = {
+            "event":
+            {
+                "train": [],
+                "no-train": [],
+                "double-train": [],
+                "slow-train": [],
+                "unknown": []
+             },
+            "train-id":
+            {
+                "1": [],
+                "2": [],
+                "3": [],
+                "4": [],
+                "5": []
+            }
+        }
+        report_json = get_report_json(train_info=train_info,
+                                      filename=str_timestamp,
+                                      report_json=report_json)
+
+        try:
+            with open(report_path, 'w', encoding='utf-8') as file:
+                json.dump(report_json, file)
+        except Exception as e:
+            logger.error('Error while saving json REPORT file: %s'%traceback.format_exc())
+     
+    else:
+        logger.info("Updating report file")
+        # get report json
+        try:
+            with open(report_path, 'r', encoding='utf-8') as file:
+                report_json = json.loads(file.read())
+            logger.info('REPORT file successfully loaded: %s'%report_json)
+        except Exception as e:
+            logger.error('Error saving json REPORT file: %s'%traceback.format_exc())
+     
+        # update report json        
+        report_json = get_report_json(train_info=train_info,
+                                      filename=str_timestamp,
+                                      report_json=report_json)
+        # save updated report json
+        try:
+            with open(report_path, 'w', encoding='utf-8') as file:
+                json.dump(report_json, file)
+        except Exception as e:
+            logger.error('Error while saving json REPORT file: %s'%traceback.format_exc())       
+
     
     return data
 
@@ -304,6 +405,8 @@ def main(npy_data_folder, json_main_save_folder, json_main_image_folder, now):
                 save_dict = dict(processed_files = [])
                 json.dump(save_dict,f)
                 logger.info('processed_files.json created')
+
+        
     
         # load processed_files: 
         processed_files_list = json.load(open(processed_files_full_path))['processed_files']    
