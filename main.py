@@ -266,10 +266,10 @@ def get_and_check_base_data():
 
 
 dir_paths = make_data_dirs()
-base_data = get_and_check_base_data()
+base_data_values = get_and_check_base_data()
 
 
-def get_train_characteristics(data: np.array, base_data: list = base_data, schema: dict = None) -> dict:
+def get_train_characteristics(data: np.array, base_data: list = None, schema: dict = None) -> dict:
     """
     Computes train characteristics based on a given schema.
 
@@ -279,6 +279,9 @@ def get_train_characteristics(data: np.array, base_data: list = base_data, schem
         :type schema: object
 
     """
+    if base_data is None:
+        base_data = base_data_values
+
     if schema is None:
         schema = train_char_schema
 
@@ -296,7 +299,10 @@ def get_train_characteristics(data: np.array, base_data: list = base_data, schem
         "rail-id": char_detector.rail_id,
         "rail-id-confidence": char_detector.rail_id_confidence,
         "speed": char_detector.speed,
-        "speed-error": char_detector.speed_error})
+        "speed-error": char_detector.speed_error,
+        "train-id": None,
+        "train-id-confidence": None
+    })
 
     if base_data:
         char_detector.base_data = base_data
@@ -312,6 +318,8 @@ def get_train_characteristics(data: np.array, base_data: list = base_data, schem
                 schema.update({"train-class": train_id_info['train-class']})
             else:
                 schema.update({"train-class": "Pending to be verified"})
+
+    # Reset char_detector object values
 
     return {"train-char": schema, "signal-processor": signal_processor, "char-detector": char_detector}
 
