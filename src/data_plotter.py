@@ -61,11 +61,16 @@ class DataPlotter:
         if self.figsize is None:
             self.figsize = (19.2, 9.83)
 
+        train_track = self.data[0]
+        best_base_data = self.data[1]
+
         fig, ax = plt.subplots(1, 1, figsize=self.figsize)
-        ax.plot(self.data)
+        ax.plot(train_track, label=f"Train Track")
+        ax.plot(best_base_data, label="Best Base Train Track")
         ax.set_title(self.title)
         ax.set_xlabel(self.xlabel)
         ax.set_ylabel(self.ylabel)
+        ax.legend(loc="upper right")
         plt.show()
 
         self.fig = fig

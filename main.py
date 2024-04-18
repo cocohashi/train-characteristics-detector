@@ -318,6 +318,7 @@ def get_train_characteristics(data: np.array, base_data: list = None, schema: di
         char_detector.base_data = base_data
         if char_detector.event == config['event']['train']:
             train_id_info = char_detector.get_train_id_info()
+            char_detector.best_base_data = train_id_info['best-base-data']
             if train_id_info['confidence'] < config['char-detector']['train-confidence-perc-limit']:
                 train_id_info.update({"train-id": "unknown", "train-class": "unknown"})
             schema.update({
@@ -430,9 +431,13 @@ if __name__ == "__main__":
             data_plotter.plot_matrix()
 
     if args.show_train_track:
-        config['plot-train-track']['title'] = f"{config['plot-train-track']['title']} - filename: {filename}"
-        data_plotter = DataPlotter(char_detector.train_track, **config['plot-train-track'])
-        data_plotter.plot_train_track()
+        if base_data_values:
+            config['plot-train-track']['title'] = f"{config['plot-train-track']['title']} - filename: {filename}"
+            data_plotter = DataPlotter((char_detector.train_track, char_detector.best_base_data),
+                                       **config['plot-train-track'])
+            data_plotter.plot_train_track()
+        else:
+            logger.warning(f"Cannot show Train Track. Base data is not given!")
 
     if args.serialize:
         logger.info("Serializing data...")

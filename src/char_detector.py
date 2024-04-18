@@ -53,6 +53,7 @@ class CharDetector(SignalProcessor):
         self.speed_error = 0
         self.train_track = []
         self.base_data = None
+        self.best_base_data = []
         self.rail_view = None
 
         # Slice waterfall in different spatial sections
@@ -315,11 +316,15 @@ class CharDetector(SignalProcessor):
         return result
 
     def get_train_id_confidence(self, base_train_class_data_list):
-        dtw_distances = []
-        for base_train_class_data in base_train_class_data_list:
-            distance = dtw.distance_fast(self.train_track, base_train_class_data, use_pruning=True)
-            dtw_distances.append(distance)
-        return self.get_confidence(np.min(dtw_distances), method=self.method, decimal=self.decimal)
+        dtw_distances_and_base_data = []
+        for base_data in base_train_class_data_list:
+            distance = dtw.distance_fast(self.train_track, base_data, use_pruning=True)
+            dtw_distances_and_base_data.append({"distance": distance, "base-data": base_data})
+        min_dtw_distances_and_base_data = min(dtw_distances_and_base_data, key=lambda x: x['distance'])
+        min_dtw_distance = min_dtw_distances_and_base_data["distance"]
+        best_base_data = min_dtw_distances_and_base_data["base-data"]
+
+        return self.get_confidence(min_dtw_distance, method=self.method, decimal=self.decimal), best_base_data
 
     def get_train_id_info(self):
         results = []
@@ -327,7 +332,8 @@ class CharDetector(SignalProcessor):
             base_train_class_data_list = data_dict.get('data')
             train_id = data_dict.get('train-id')
             train_class = data_dict.get('train-class')
-            confidence = self.get_train_id_confidence(base_train_class_data_list)
+            confidence, best_base_data = self.get_train_id_confidence(base_train_class_data_list)
             results.append(
-                {"confidence": confidence, "train-id": train_id, "train-class": train_class, "method": "gaussian"})
+                {"confidence": confidence, "train-id": train_id, "train-class": train_class, "method": "gaussian",
+                 "best-base-data": best_base_data})
         return max(results, key=lambda x: x['confidence'])
