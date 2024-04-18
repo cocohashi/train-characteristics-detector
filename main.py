@@ -62,12 +62,16 @@ parser.add_argument(
 # -----------------------------------------------------------------------------------------------------------------
 # Confing Parameters
 # -----------------------------------------------------------------------------------------------------------------
-# Data directory names
+
+PRODUCTION_ENVIRONMENT = False
+
+# ----- Data directory names ------
 project_name = "MC"
 file_extension = "npy"  # Only "json" and "npy" allowed
 year = 2023
 month = 3
 day = 9
+# ---------------------------------
 
 # ----- Data Paths -----
 root_path = os.path.abspath(os.path.join(os.getcwd(), "./.."))
@@ -76,17 +80,22 @@ data_path_ext_dev = os.path.join(data_path_dev, file_extension)
 day_path = os.path.join(data_path_ext_dev, str(year), f"{month:02}", f"{day:02}")
 output_path = os.path.join(data_path_ext_dev, "output")
 base_path = os.path.join(data_path_dev, "base")
+# ----------------------
 
-# TODO: Dev base_path: "..data/{project_name}/{file_extension}"
-
-# ----- Development Path -----
-data_path = data_path_ext_dev
-# ----------------------------
-
-# ----- Production Path -----
-# data_path = ""
-# base_path = "" # optional
-# ----------------------------
+if PRODUCTION_ENVIRONMENT:
+    # ----- Production Path -----
+    # TODO: Production environment
+    #  data_path: {write here your absolute data path}
+    data_path = ""
+    base_path = ""  # optional
+    # ----------------------------
+else:
+    # ----- Development Path -----
+    # TODO: Development environment
+    #  data_path: "..data/{project_name}/{file_extension}"
+    #  day_path: "..data/{project_name}/{file_extension}/{year}/{month}/{day}"
+    data_path = data_path_ext_dev
+    # ----------------------------
 
 # Config Flags
 CLASSIFY_TRAINS = True
@@ -195,6 +204,7 @@ config = {
 
 
 # -----------------------------------------------------------------------------------------------------------------
+
 def make_data_dirs(data_path=data_path):
     # Exterior Data Path
     if not os.path.isdir(data_path):
