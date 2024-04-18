@@ -383,7 +383,7 @@ sys.path.append(str(parent_path))
 from main import main
 ```
 
-2) Run main passing argparse as list
+2) Run main passing each argument as a string in a list
 
 ```python
 main(["-dt", "2023-03-09", "-f", "15_26_23.npy", "-d"])
