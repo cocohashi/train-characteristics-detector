@@ -21,7 +21,7 @@ The tool has been tested on python 3.9.11.
 2. Follow installation instructions
 3. Create new Virtual environment called `venv` inside project root path.
 
-```bash
+```shell
 py -3.9 -m venv "C:\[project-root-path]\venv"
 ```
 
@@ -33,18 +33,18 @@ We will explore two python installation methods:
 ##### Installing Python from dpkg package manager
 
 First ensure you have updated and upgraded linux to the latest version
-```bash
+```shell
 sudo apt update && sudo apt upgrade
 ```
 
 Check already installed python version
-```bash
+```shell
 python3 --version
 python --version
 ```
 
 Install python version from dpkg package manager
-```bash
+```shell
 sudo apt-get install software-properties-common
 sudo add-apt-repository ppa:deadsnakes/ppa
 sudo apt-get update
@@ -60,61 +60,61 @@ environment `venv`.
 
 First Install `virtualenv`
 
-```bash
+```shell
 sudo apt install virtualenv
 ```
 
-```bash
+```shell
 pip install virtualenv
 ```
 
 1. Create a new directory where you want to download Python distribution (Ex. `/usr/src`)
 
 Ex.
-```bash
+```shell
 mkdir ~/src
 ```
 
 2. Get Official Python distribution
-```bash
+```shell
 cd ~/src
 wget https://www.python.org/ftp/python/3.9.11/Python-3.9.11.tgz
 ```
 
 3. Unzip
-```bash
+```shell
 tar -zxvf Python-3.9.11.tgz
 ```
 
 4. Create a new directory where compile python software 
-```bash
+```shell
 mkdir ~/.python3.9.11
 ```
 
 5. Configure Python makefile
-```bash
+```shell
 cd Python-3.9.11
 ./configure --prefix=$hOME/.python3.9.11
 ```
 
 6. Make and Install
-```bash
+```shell
 make
 make install 
 ```
 
 7. Run setup.py using recently install python version
-```bash
+```shell
 ~/.python3.9.11/bin/python3 setup.py install
 ```
 
 8. Create virtual environment
 
-#### Error fixes
+#### Fixing possible errors
 
 You can face the following error when building Python from source:
 
-```bash
+```shell
 Failed to build these modules:
 _hashlib              _ssl   
 etc...                                  
@@ -130,12 +130,12 @@ this [blog](https://jameskiefer.com/posts/installing-python-3.7-on-debian-8/) ex
 Solution found.
 
 Install required packages:
-```bash
+```shell
 sudo apt-get install build-essential checkinstall libreadline-gplv2-dev libncursesw5-dev libsqlite3-dev tk-dev libgdbm-dev libc6-dev libbz2-dev
 ```
 
 Download oppenssl (1.0.2o version at least) and point to that specific version.
-```bash
+```shell
 ./configure --with-openssl=../openssl-1.0.2o --enable-optimizations --prefix=$HOME/.python3.9.11
 sudo make
 sudo make altinstall
@@ -148,25 +148,196 @@ From project root path:
 1. Activate `venv` virtual environment
 
 On Windows:
-```bash
+```shell
 venv\Scripts\activate
 ```
 
 On Linux:
-```bash
+```shell
 source venv/bin/activate
 ```
 
 2. Upgrade pip
-```bash
+```shell
 python -m pip install --upgrade pip
 ```
 
 3. Install requirements
-```bash
+```shell
 pip install -r requirements.txt 
+```
+
+## Data
+***
+
+### Data Prerequisites
+
+First of all, you will need to store the data in a specific path. By default, in a development environment,
+the path is defined using the following path schema:
+
+```
+..data/{project_name}/{file_extension}/{year}/{month}/{day}
+```
+
+You can edit this configuration values in the `Config Paramenters` section located in `main.py`
+You can also set `PRODUCTION_ENVIRONMENT` flag to `True` and define your custom absolute data path.
+
+
+> In the defined absolute path you should manually create `{year}/{month}/{day}` folder structure
+and store there waterfall data.
+
+### Data convection
+
+The waterfall data files are named with the hour, minute and second in which an event has been detected in the DAS 
+equipment installed and monitoring railway in real-time, using the format `{hour}_{minute}_{second}` 
+(Ex. `10_57_45.json`). 
+
+The data is stored in JSON by default (`.json`)(following client wishes), but also admits numpy array data `npy` data,
+which obtains ~80 times faster loading times.
+
+You will need to set in the `Configuration Paramenters` the `file_extension` parameter to `npy` or `json`
+
+#### Base data convection
+
+If you want to classify between different train classes, a `base-data` of each different `train-class` MUST be defined.
+
+The `base-data` contains the computed `train-track` (the footprint of the train) of a speficic `train-class`
+
+The `base-data` will be stored in the path: `../data/{project_name}/{file_extension}/base`
+
+There we should manually create `train-type` directories with the same name of the ones defined in `train_map` variable:
+
+Ex. `../data/{project_name}/{file_extension}/base/S-102-6p`
+
+Defined `train_map`
+
+```python
+train_map = {
+    1: "S-102-6p",
+    2: "S-102-8p",
+    3: "S-103-u",
+    4: "S-103-d",
+    5: "S-104"
+}
+```
+
+### Train Characteristic Schema 
+
+It has been defined the following schema:
+
+```python
+train_char_schema = {
+    "datetime": None,
+    "event": None,
+    "status": "not-computed",
+    "direction": None,
+    "speed": None,
+    "speed-magnitude": "kmh",
+    "speed-error": None,
+    "rail-id": None,
+    "rail-id-confidence": None,
+    "train-id": None,
+    "train-id-confidence": None,
+    "train-ids": train_ids,
+}
 ```
 
 ## Usage
 ***
+
+Compute train characteristics of a specific waterfall data and show results. 
+
+```shell
+python .\main.py -f 07_06_27.npy -d
+```
+
+By default, the input file will be searched for in the path  `{data_path}/{year}/{month}/{day}`, defined in 
+`Configuration Paramenters`. You can also set the `{year}/{month}/{day}` from command line.
+
+```shell
+python .\main.py -dt 2023-03-16 -f 07_06_27.npy -d
+```
+
+You can add the results and store them in the give JSON file using the flag `--serialize` or `-s`. A JSON file will be created in the path
+```
+..data/{project_name}/{file_extension}/output/{year}/{month}/{day}
+```
+
+```shell
+python .\main.py -dt 2023-03-16 -f 07_06_27.npy -d -s
+```
+> WARNING: This option will only add data to JSON file if the input data was a JSON file in the first time.
+> 
+> The computed train characteristics will be added in the default key ´info´
+
+### Plot Process Waterfall's
+
+The plotting of the waterfall in each different process will help to debug possible data related problems in the future
+
+
+#### Show Raw Waterfall
+
+![raw_w_sample_01.png](img%2Fraw_w_sample_01.png)
+
+```shell
+ python .\main.py -dt 2023-03-09 -f 15_26_23.npy -d -sec 0 -rw
+```
+
+> You can select the section to be showed usin `-sec` option. Available sections '0' and '1'.
+
+#### Show Filtered Waterfall
+
+![filtered_w_sample_01.png](img%2Ffiltered_w_sample_01.png)
+
+```shell
+ python .\main.py -dt 2023-03-09 -f 15_26_23.npy -d -sec 0 -fw
+```
+
+#### Show Sobel Waterfall
+
+![sobel_w_sample_01.png](img%2Fsobel_w_sample_01.png)
+
+```shell
+ python .\main.py -dt 2023-03-09 -f 15_26_23.npy -d -sec 0 -sw
+```
+
+#### Show Threshold Waterfall (one-hot-encoding)
+
+![thr_w_sample_01.png](img%2Fthr_w_sample_01.png)
+
+```shell
+ python .\main.py -dt 2023-03-09 -f 15_26_23.npy -d -sec 0 -tw
+```
+
+#### Show Mean Filtered Waterfall (one-hot-encoding)
+
+![thr_mean_w_sample_01.png](img%2Fthr_mean_w_sample_01.png)
+
+```shell
+ python .\main.py -dt 2023-03-09 -f 15_26_23.npy -d -sec 0 -mfw
+```
+
+#### Show Computed Mask Waterfall (one-hot-encoding)
+
+![mask_w_sample_01.png](img%2Fmask_w_sample_01.png)
+
+```shell
+ python .\main.py -dt 2023-03-09 -f 15_26_23.npy -d -sec 0 -mw
+```
+
+#### Show Computed Rail View
+
+![rail_view_w_sample_01.png](img%2Frail_view_w_sample_01.png)
+
+```shell
+ python .\main.py -dt 2023-03-09 -f 15_26_23.npy -d -sec 0 -rv
+```
+
+#### Show Train Track (train's footprint)
+
+![train_track_w_sample_01.png](img%2Ftrain_track_w_sample_01.png)
+
+```shell
+ python .\main.py -dt 2023-03-09 -f 15_26_23.npy -d -sec 0 -tt
+```
 
