@@ -67,7 +67,7 @@ PRODUCTION_ENVIRONMENT = False
 
 # ----- Data directory names ------
 project_name = "MC"
-file_extension = "npy"  # Only "json" and "npy" allowed
+file_extension = "json"  # Only "json" and "npy" allowed
 year = 2023
 month = 3
 day = 9
@@ -347,6 +347,7 @@ if __name__ == "__main__":
         ), f"date does not follows {date_format} date format."
         year, month, day = [args.date.split('-')[x] for x in range(3)]
         day_path = os.path.join(data_path, str(year), f"{int(month):02}", f"{int(day):02}")
+        output_day_path = os.path.join(output_path, str(year), str(month), str(day))
 
     if args.section:
         section = args.section
@@ -436,7 +437,9 @@ if __name__ == "__main__":
 
     if args.serialize:
         logger.info("Serializing data...")
-        output_day_path = dir_paths['output_day_path']
+        if not os.path.isdir(output_day_path):
+            os.makedirs(output_day_path)
+
         if data_loader.items.get(output_key):
             data_loader.items[output_key].update(train_char)
             data_loader.fullpath = os.path.join(output_day_path, filename)
