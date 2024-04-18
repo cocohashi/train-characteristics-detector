@@ -67,7 +67,7 @@ PRODUCTION_ENVIRONMENT = False
 
 # ----- Data directory names ------
 project_name = "MC"
-file_extension = "json"  # Only "json" and "npy" allowed
+file_extension = "npy"  # Only "json" and "npy" allowed
 year = 2023
 month = 3
 day = 9
@@ -115,7 +115,7 @@ train_classes = list(train_map.values())
 # TODO:
 #  In base path we MUST create all directories defined in 'train_map', and store there each train's base values.
 #  Ex.
-#  base_path tran-id 1: "../data/{project_name}/{file_extension}/S-102-6p"
+#  base_path tran-id 1: "../data/{project_name}/{file_extension}/base/S-102-6p"
 #
 
 # Train Characteristic Schema
