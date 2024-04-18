@@ -378,7 +378,6 @@ if __name__ == "__main__":
     # Load data
     data_loader = DataLoader(file_path)
 
-    logger.info(data_loader.data.shape)
     # Get train characteristics
     output = get_train_characteristics(data_loader.data)
 
