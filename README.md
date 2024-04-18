@@ -361,3 +361,30 @@ The plotting of the waterfall in each different process will help to debug possi
  python .\main.py -dt 2023-03-09 -f 15_26_23.npy -d -sec 0 -tt
 ```
 
+### Execute main from within a second script
+
+This will be helpful to automate tasks in production code, using the already implemented features.
+
+Ex. Execute train characteristics for previous data sets that had not been calculated
+
+To import the argparse from external script, you will need to:
+
+1) Append path to sys.path and import main function
+
+```python
+import sys
+from pathlib import Path
+
+file_path = Path(__file__).resolve()
+parent_path = file_path.parent
+
+sys.path.append(str(parent_path))
+
+from main import main
+```
+
+2) Run main passing argparse as list
+
+```python
+main(["-dt", "2023-03-09", "-f", "15_26_23.npy", "-d"])
+```

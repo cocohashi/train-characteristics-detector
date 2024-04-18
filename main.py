@@ -282,10 +282,6 @@ def get_and_check_base_data():
     return base_data
 
 
-dir_paths = make_data_dirs()
-base_data_values = get_and_check_base_data()
-
-
 def get_train_characteristics(data: np.array, base_data: list = None, schema: dict = None) -> dict:
     """
     Computes train characteristics based on a given schema.
@@ -342,8 +338,8 @@ def get_train_characteristics(data: np.array, base_data: list = None, schema: di
     return {"train-char": schema, "signal-processor": signal_processor, "char-detector": char_detector}
 
 
-if __name__ == "__main__":
-    args = parser.parse_args()
+def main(args=None):
+    args = parser.parse_args(args)
     filename = args.filename
     section = None
 
@@ -480,3 +476,10 @@ if __name__ == "__main__":
         data_loader.base_data = char_detector.train_track
         data_loader.deserialize_npy(base_data=True)
         logger.info(f"Base Data successfully serialized at: {full_base_path}")
+
+
+dir_paths = make_data_dirs()
+base_data_values = get_and_check_base_data()
+
+if __name__ == "__main__":
+    main()
