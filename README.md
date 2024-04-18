@@ -255,7 +255,27 @@ By default, the input file will be searched for in the path  `{data_path}/{year}
 `Configuration Paramenters`. You can also set the `{year}/{month}/{day}` from command line.
 
 ```shell
-python .\main.py -dt 2023-03-16 -f 07_06_27.npy -d
+ python .\main.py -dt 2023-03-09 -f 15_26_23.npy -d 
+```
+
+Expected result:
+```shell
+INFO:__main__:CLASSIFY_TRAINS: True
+DEBUG:__main__:train-characteristic-values:
+{
+  'datetime': None,
+  'event': 'train',
+  'status': 'computed',
+  'direction': 'Malaga -> Cordoba',
+  'speed': 290.005, 'speed-magnitude': 'kmh',
+  'speed-error': 6.252,
+  'rail-id': 1,
+  'rail-id-confidence': 0.488,
+  'train-id': 1,
+  'train-id-confidence': 0.997,
+  'train-ids': [1, 2, 3, 4, 5],
+  'train-class': 'Pending to be verified'
+}
 ```
 
 You can add the results and store them in the give JSON file using the flag `--serialize` or `-s`. A JSON file will be created in the path
@@ -264,7 +284,7 @@ You can add the results and store them in the give JSON file using the flag `--s
 ```
 
 ```shell
-python .\main.py -dt 2023-03-16 -f 07_06_27.npy -d -s
+python .\main.py -dt 2023-03-09 -f 15_26_23.npy -d -s
 ```
 > WARNING: This option will only add data to JSON file if the input data was a JSON file in the first time.
 > 
