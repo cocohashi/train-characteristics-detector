@@ -53,8 +53,8 @@ class CharDetector(SignalProcessor):
         self.speed_error = 0
         self.train_track = []
         self.base_data = None
-        self.best_base_data = []
         self.rail_view = None
+        self.train_id_info = None
 
         # Slice waterfall in different spatial sections
         self.sections = self.get_sections()

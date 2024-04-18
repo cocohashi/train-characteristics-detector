@@ -27,6 +27,7 @@ class DataLoader:
         self.spatial_len = 0
         self.temporal_len = 0
         self.data = np.ndarray(shape=(0, 0))
+        self.base_data = None
 
         if not os.path.exists(self.fullpath):
             logger.warning(
@@ -86,3 +87,11 @@ class DataLoader:
         self.data = np.load(self.fullpath)
         self.temporal_len = self.data.shape[0]
         self.spatial_len = self.data.shape[1]
+
+    # DESERIALIZE JSON
+    # ///////////////////////////////////////////////////////////////
+    def deserialize_npy(self, base_data=False):
+        if base_data:
+            np.save(self.fullpath, self.base_data)
+        else:
+            np.save(self.fullpath, self.data)

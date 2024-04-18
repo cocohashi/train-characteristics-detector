@@ -35,6 +35,13 @@ parser.add_argument(
     "-s", "--serialize", action="store_true", help="Serialize JSON Data"
 )
 parser.add_argument(
+    "-sb", "--serialize-base", action="store_true", help="Serialize Base Data as numpy array"
+)
+parser.add_argument(
+    "-cb", "--class-base", type=str, help="Base Class tag."
+                                          "Base data will be serialized with this tag", required=False
+)
+parser.add_argument(
     "-rw", "--show-raw-wf", action="store_true", help="Show Raw Waterfall"
 )
 parser.add_argument(
@@ -318,7 +325,7 @@ def get_train_characteristics(data: np.array, base_data: list = None, schema: di
         char_detector.base_data = base_data
         if char_detector.event == config['event']['train']:
             train_id_info = char_detector.get_train_id_info()
-            char_detector.best_base_data = train_id_info['best-base-data']
+            char_detector.train_id_info = train_id_info
             if train_id_info['confidence'] < config['char-detector']['train-confidence-perc-limit']:
                 train_id_info.update({"train-id": "unknown", "train-class": "unknown"})
             schema.update({
@@ -433,7 +440,7 @@ if __name__ == "__main__":
     if args.show_train_track:
         if base_data_values:
             config['plot-train-track']['title'] = f"{config['plot-train-track']['title']} - filename: {filename}"
-            data_plotter = DataPlotter((char_detector.train_track, char_detector.best_base_data),
+            data_plotter = DataPlotter((char_detector.train_track, char_detector.train_id_info['best-base-data']),
                                        **config['plot-train-track'])
             data_plotter.plot_train_track()
         else:
@@ -457,3 +464,19 @@ if __name__ == "__main__":
             f"Serialized.\n"
             f"Train characteristics updated in: '{filename}' JSON file, saved in path:"
             f"\n{output_day_path}")
+
+    if args.serialize_base:
+        logger.info("Serializing Train Track as base data...")
+        if args.class_base:
+            class_base = args.class_base
+            assert (
+                any(class_base in train_classes for train in train_classes)
+            ), f"{class_base} is not one of the allowed train classes: {train_classes}"
+        else:
+            class_base = char_detector.train_id_info['train-class']
+
+        full_base_path = os.path.join(base_path, class_base, f"{year}_{month}_{day}_{filename}")
+        data_loader.fullpath = full_base_path
+        data_loader.base_data = char_detector.train_track
+        data_loader.deserialize_npy(base_data=True)
+        logger.info(f"Base Data successfully serialized at: {full_base_path}")
