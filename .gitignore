@@ -183,9 +183,7 @@ data/
 *.pptx
 *.xlsx
 
-# Image Formats
-*.png
-*.jpeg
+# Other Formats
 *.pdf
 *.mat
 
