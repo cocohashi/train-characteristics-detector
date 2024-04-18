@@ -28,6 +28,7 @@ class DataLoader:
         self.temporal_len = 0
         self.data = np.ndarray(shape=(0, 0))
         self.base_data = None
+        self.rail_view_data = None
 
         if not os.path.exists(self.fullpath):
             logger.warning(
@@ -90,8 +91,10 @@ class DataLoader:
 
     # DESERIALIZE JSON
     # ///////////////////////////////////////////////////////////////
-    def deserialize_npy(self, base_data=False):
+    def deserialize_npy(self, base_data=False, rail_view_data=False):
         if base_data:
             np.save(self.fullpath, self.base_data)
+        elif rail_view_data:
+            np.save(self.fullpath, self.rail_view_data)
         else:
             np.save(self.fullpath, self.data)

@@ -35,6 +35,9 @@ parser.add_argument(
     "-s", "--serialize", action="store_true", help="Serialize JSON Data"
 )
 parser.add_argument(
+    "-srv", "--serialize-rail-view", action="store_true", help="Serialize Rail View as numpy array"
+)
+parser.add_argument(
     "-sb", "--serialize-base", action="store_true", help="Serialize Base Data as numpy array"
 )
 parser.add_argument(
@@ -471,11 +474,30 @@ def main(args=None):
         else:
             class_base = char_detector.train_id_info['train-class']
 
-        full_base_path = os.path.join(base_path, class_base, f"{year}_{month}_{day}_{filename}")
+        full_base_path = os.path.join(base_path, class_base, f"base_{year}_{month}_{day}_{filename}")
         data_loader.fullpath = full_base_path
         data_loader.base_data = char_detector.train_track
         data_loader.deserialize_npy(base_data=True)
         logger.info(f"Base Data successfully serialized at: {full_base_path}")
+
+    if args.serialize_rail_view:
+        logger.info("Serializing Rail View data...")
+        if char_detector.rail_view:
+            rail_view_path = os.path.join(data_path, "rail_view", str(year), str(month), str(day))
+            if not os.path.isdir(rail_view_path):
+                os.makedirs(rail_view_path)
+
+            # Save Rail View of Section 0
+            data_loader.rail_view_data = char_detector.rail_view[0]
+            data_loader.fullpath = os.path.join(rail_view_path, f"rail_view_{filename.split('.')[0]}_sec_0.npy")
+            data_loader.deserialize_npy(rail_view_data=True)
+
+            # Save Rail View of Section 1
+            data_loader.rail_view_data = char_detector.rail_view[1]
+            data_loader.fullpath = os.path.join(rail_view_path, f"rail_view_{filename.split('.')[0]}_sec_1.npy")
+
+            data_loader.deserialize_npy(rail_view_data=True)
+            logger.info(f"Rail View Data successfully serialized at: {rail_view_path}")
 
 
 dir_paths = make_data_dirs()
