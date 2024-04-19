@@ -45,6 +45,9 @@ parser.add_argument(
                                           "Base data will be serialized with this tag", required=False
 )
 parser.add_argument(
+    "-mr", "--multi-regression", type=int, help="Compute a Simple linear Regression multiple times"
+)
+parser.add_argument(
     "-rw", "--show-raw-wf", action="store_true", help="Show Raw Waterfall"
 )
 parser.add_argument(
@@ -174,6 +177,11 @@ config = {
         "decimal": 3,
         "train-confidence-perc-limit": 0.2,  # A classified train, with a confidence percentage value lower than
         # this limit, will be considered as "unknown" train-class and train-id.
+        "multi-regression": False,
+        "multi-regression-epochs": 0,
+        "multi-regression-max-epochs": 4,
+        "multi-regression-mask-width-margin": 0.05,
+        # TODO: This variable is very sensible. Check how to prevent issues here.
         "method": "gaussian"  # Allowed values only: "exponential", "gaussian", "reciprocal", "custom"
     },
 
@@ -362,6 +370,13 @@ def main(args=None):
         assert (
             bool(section < section_num)
         ), f"The given section should be less than {section_num}"
+
+    if args.multi_regression:
+        multi_regression_max_epochs = config['char-detector']['multi-regression-max-epochs']
+        multi_regression_epochs = min(multi_regression_max_epochs, args.multi_regression)
+        logger.info(f"MULTI_REGRESSION: True\nEPOCHS: {multi_regression_epochs}")
+        config['char-detector']['multi-regression'] = True
+        config['char-detector']['multi-regression-epochs'] = multi_regression_epochs
 
     # Check data entry
     assert (

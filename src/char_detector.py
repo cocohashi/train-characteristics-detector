@@ -23,7 +23,7 @@ class CharDetector(SignalProcessor):
         self.N = signal_processor.N
         self.dt = signal_processor.dt
 
-        signal_processor.Wn = config['signal']['Wn-class']  # Change Cut-off freq: Wn-class
+        self.signal_processor.Wn = config['signal']['Wn-class']  # Change Cut-off freq: Wn-class
         self.section_limit = config['char-detector']['section-limit']
         self.section_num = config['char-detector']['section-num']
         self.mask_width = config['char-detector']['mask-width'] / self.N
@@ -35,6 +35,10 @@ class CharDetector(SignalProcessor):
         self.upper_speed_limit = config['char-detector']['upper-speed-limit']
         self.lower_speed_limit = config['char-detector']['lower-speed-limit']
         self.decimal = config['char-detector']['decimal']
+        self.multi_regression = config['char-detector']['multi-regression']
+        self.multi_regression_epochs = config['char-detector']['multi-regression-epochs']
+        self.multi_regression_mask_width_margin = config['char-detector']['multi-regression-mask-width-margin']
+
         self.method = config['char-detector']['method']
 
         self.positive_direction = config['schema']['positive-direction']
@@ -56,48 +60,110 @@ class CharDetector(SignalProcessor):
         self.rail_view = None
         self.train_id_info = None
 
+        self.sobel_sections = None
+        self.mean_filter_sections = None
+        self.thr_sections = None
+        self.coordinates_sections = None
+        self.linear_reg_params = None
+        self.previous_linear_reg_params = None
+        self.mask_sections = None
+        self.masked_sections = None
+
         # Slice waterfall in different spatial sections
         self.sections = self.get_sections()
 
-        # Compute sobel and threshold filters to each section
-        self.sobel_sections = [self.sobel_filter(data) for data in self.sections]
-        self.thr_sections = [self.thresholding(data) for data in self.sobel_sections]
+        # Get mean filter of each section
+        self.get_mean_filter_sections(input_data=self.sections)
 
-        # Get mask of each section
-        self.mean_filter_sections = [self.mean_filter(data) for data in self.thr_sections]
-
-        # Check 'NO TRAIN' event
+        # Check 'NO-TRAIN' event
         if self.check_event(event=self.no_train_event):
             self.event = self.no_train_event
 
+        # Check 'DOUBLE-TRAIN' event
         elif self.check_event(event=self.double_train_event):
             self.event = self.double_train_event
+
+        # Compute characteristics for 'TRAIN' event
         else:
-            self.coordinates_sections = [self.one_hot_to_coordinates(data) for data in self.mean_filter_sections]
-            self.linear_reg_params = [self.linear_regression(coordinate) for coordinate in self.coordinates_sections]
-            self.mask_sections = [self.get_mask(self.thr_sections[x], **self.linear_reg_params[x]) for x in
-                                  range(self.section_num)]
+            # Get mask of each section
+            self.get_mask_sections()
 
             # Filter data again using the filter defined in Wn-class
-            self.filtered_data = signal_processor.butterworth_filter()  # Apply Cut-off freq: Wn-class
+            self.filtered_data = self.signal_processor.butterworth_filter()  # Apply Cut-off freq: Wn-class
             self.sections = self.get_sections()
 
-            # Apply mask to each section
-            self.masked_sections = [np.multiply(self.sections[x], self.mask_sections[x]) for x in
-                                    range(self.section_num)]
-            self.masked_sections = [self.auto_crop(data) for data in self.masked_sections]
-            self.rail_view = [self.filter_zeros(data) for data in self.masked_sections]
+            # Get rail view each section
+            self.get_rail_view(apply_mask=self.sections)
 
+            # Get train characteristics
             self.get_direction()
             self.get_rail_id()
             self.get_rail_id_confidence()
             self.get_speed(decimal=self.decimal)
             self.get_train_track()
 
+            if self.multi_regression:
+                for x in range(self.multi_regression_epochs):
+                    self.mask_width = self.mask_width * (1 - self.multi_regression_mask_width_margin)
+                    self.previous_linear_reg_params = self.linear_reg_params
+                    logger.info(f"previous_linear_reg_params: {self.previous_linear_reg_params}")
+                    self.get_mean_filter_sections(input_data=self.rail_view)
+                    self.get_mask_sections()
+                    self.get_rail_view(apply_mask=self.rail_view)
+                    logger.info(f"linear_reg_params: {self.linear_reg_params}")
+                    self.update_slopes()
+                    self.get_direction()
+                    self.get_rail_id()
+                    self.get_rail_id_confidence()
+                    self.get_speed(decimal=self.decimal)
+                    self.get_train_track()
+
+            # Depending on computed speed we could face an "unknown" or "slow-train" events
             if self.speed > self.upper_speed_limit:
                 self.event = self.unknown_event
             elif self.speed < self.lower_speed_limit:
                 self.event = self.slow_train
+
+    def get_mean_filter_sections(self, input_data):
+        # Compute sobel and threshold filters to each section
+        self.sobel_sections = [self.sobel_filter(data) for data in input_data]
+        self.thr_sections = [self.thresholding(data) for data in self.sobel_sections]
+
+        # Get mask of each section
+        self.mean_filter_sections = [self.mean_filter(data) for data in self.thr_sections]
+
+    def get_mask_sections(self):
+        self.coordinates_sections = [self.one_hot_to_coordinates(data) for data in self.mean_filter_sections]
+        self.linear_reg_params = [self.linear_regression(coordinate) for coordinate in self.coordinates_sections]
+        self.mask_sections = [self.get_mask(self.thr_sections[x], **self.linear_reg_params[x]) for x in
+                              range(self.section_num)]
+        logger.info(f"get mask_sections.shape: {self.mask_sections[0].shape}")
+
+    def get_rail_view(self, apply_mask) -> None:
+        if apply_mask is None:
+            apply_mask = None
+
+        logger.info(f"apply_mask.shape: {apply_mask[0].shape}")
+        logger.info(f"get mask_sections.shape: {self.mask_sections[0].shape}")
+        # Apply mask to each section
+        self.masked_sections = [np.multiply(apply_mask[x], self.mask_sections[x]) for x in
+                                range(self.section_num)]
+        self.masked_sections = [self.auto_crop(data) for data in self.masked_sections]
+        self.rail_view = [self.filter_zeros(data) for data in self.masked_sections]
+
+    def update_slopes(self):
+        slopes = [section.get('slope') for section in self.linear_reg_params]
+        previous_slopes = [section.get('slope') for section in self.previous_linear_reg_params]
+        logger.info(f"previous_slopes: {previous_slopes}")
+
+        if slopes and previous_slopes:
+            new_slopes = [sum(x) for x in zip(slopes, previous_slopes)]
+            logger.info(f"slopes: {slopes}")
+            logger.info(f"new_slopes: {new_slopes}")
+            for i, d in enumerate(self.linear_reg_params):
+                d.update((k, new_slopes[i]) for k, v in d.items() if k == "slope")
+
+            # logger.info(f"updated: {self.linear_reg_params}")
 
     def get_sections(self):
         """

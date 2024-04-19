@@ -290,6 +290,26 @@ python .\main.py -dt 2023-03-09 -f 15_26_23.npy -d -s
 > 
 > The computed train characteristics will be added in the default key ´info´
 
+#### Multi-regression (NEW!)
+
+You can also compute the `multi-regression` method, to improve the mask detection accuracy and obtain a better 
+fitted `rail-view`. 
+
+```shell
+python .\main.py -dt 2023-03-09 -f 15_26_23.npy -d -mr 1
+```
+
+> INFO:
+> 
+>  - Use '-mr' option with a value equal or higher than '1' 
+> 
+>  - 'multi-regression-max-epochs': is set to 4 by default. So you will not be able to compute the regression more than 
+> this number of iterations
+> 
+>  - 'multi-regression-mask-width-margin' sets the percentage in which the mask-width will be reduced. Ex
+> if 0.1 -> mask-width = mask-width * (1 -  0.1). So, every iteration mask-width will be reduced by a 10%
+> Very High or low values will result in a bad functioning of the method. Be careful tuning this variable.
+
 ### Plot Process Waterfall's
 
 The plotting of the waterfall in each different process will help to debug possible data related problems in the future
