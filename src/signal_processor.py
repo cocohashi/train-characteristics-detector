@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 class SignalProcessor:
     def __init__(self, data: np.ndarray, **config):
         self.data = data
-
+        self.debug = config['debug']
         self.N = config['signal']['N']
         self.f_order = config['signal']['f_order']
         self.Wn = config['signal']['Wn-mask']
@@ -21,6 +21,10 @@ class SignalProcessor:
 
         self.reduced_data = self.movmean_and_downsample()
         self.filtered_data = self.butterworth_filter()
+
+        if self.debug:
+            logger.debug(f"Input Data Size: {self.data.shape}")
+            logger.debug(f"Reduced Data to Size: {self.reduced_data.shape}")
 
     def movmean_and_downsample(self):
         """

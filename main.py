@@ -76,7 +76,10 @@ parser.add_argument(
 # Confing Parameters
 # -----------------------------------------------------------------------------------------------------------------
 
+# Config Flags
 PRODUCTION_ENVIRONMENT = False
+CLASSIFY_TRAINS = True
+TRAIN_CLASS_VERIFIED = False
 
 # ----- Data directory names ------
 project_name = "MC"
@@ -110,9 +113,6 @@ else:
     data_path = data_path_ext_dev
     # ----------------------------
 
-# Config Flags
-CLASSIFY_TRAINS = True
-TRAIN_CLASS_VERIFIED = False
 
 # Train-map
 train_map = {
@@ -217,7 +217,9 @@ config = {
     "schema": {
         "positive-direction": "Cordoba -> Malaga",
         "negative-direction": "Malaga -> Cordoba"
-    }
+    },
+
+    "debug": False
 }
 
 
@@ -354,6 +356,10 @@ def main(args=None):
     filename = args.filename
     section = None
 
+    # Debug
+    if args.debug:
+        config['debug'] = True
+
     # Check date
     if args.date:
         date_format = "%Y-%m-%d"
@@ -408,9 +414,7 @@ def main(args=None):
     signal_processor = output['signal-processor']
     char_detector = output['char-detector']
 
-    # Debug
-    if args.debug:
-        logger.debug(f"train-characteristic-values:\n{train_char}")
+    logger.info(f"train-characteristic-values:\n{train_char}")
 
     if args.show_raw_wf:
         data_plotter = DataPlotter(data_loader.data, **config['plot-matrix'])
