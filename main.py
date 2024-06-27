@@ -1,30 +1,44 @@
 import os
+import logging
 import argparse
 import matplotlib.pyplot as plt
 import numpy as np
 
 from datetime import datetime
+
+# -------------------------------------------------------------------------------------------------------------------
+# Config Flags
+# -------------------------------------------------------------------------------------------------------------------
+os.environ['ENVIRONMENT'] = "develop"  # 'develop' and 'production' environments only allowed
+CLASSIFY_TRAINS = True
+TRAIN_CLASS_VERIFIED = False
+# -------------------------------------------------------------------------------------------------------------------
+
 from src.data_loader import DataLoader
 from src.signal_processor import SignalProcessor
 from src.data_plotter import DataPlotter
 from src.char_detector import CharDetector
 
-# Set Logger
-plt.set_loglevel("warning")
-
 # -------------------------------------------------------------------------------------------------------------------
-import logging
-
+# Set Logger
+# -------------------------------------------------------------------------------------------------------------------
 logger = logging.getLogger(__name__)
 logger.propagate = False
-handler = logging.StreamHandler()
-# handler = logging.FileHandler('main.log')
+handler = logging.StreamHandler() if os.environ['ENVIRONMENT'] == 'develop' else logging.FileHandler('main.log')
 logger.setLevel(logging.INFO)
 formatter = logging.Formatter(fmt='%(asctime)s - %(name)s - %(levelname)s: %(message)s', datefmt="%Y-%m-%d %H:%M:%S")
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 # -----------------------------------------------------------------------------------------------------------------
 
+# -----------------------------------------------------------------------------------------------------------------
+# Set Pyplot Logger
+# -----------------------------------------------------------------------------------------------------------------
+plt.set_loglevel("warning")
+# -----------------------------------------------------------------------------------------------------------------
+
+
+logger.info(f"ENVIRONMENT: {os.environ['ENVIRONMENT']}")
 
 # Set Argument Parser
 parser = argparse.ArgumentParser(description="Tool to Compute Train Characteristics")
@@ -90,12 +104,6 @@ parser.add_argument(
 # -----------------------------------------------------------------------------------------------------------------
 # Confing Parameters
 # -----------------------------------------------------------------------------------------------------------------
-
-# Config Flags
-PRODUCTION_ENVIRONMENT = False
-CLASSIFY_TRAINS = True
-TRAIN_CLASS_VERIFIED = False
-
 # ----- Data directory names ------
 project_name = "MC"
 file_extension = "npy"  # Only "json" and "npy" allowed
@@ -113,7 +121,7 @@ output_path = os.path.join(data_path_ext_dev, "output")
 base_path = os.path.join(data_path_dev, "base")
 # ----------------------
 
-if PRODUCTION_ENVIRONMENT:
+if not os.environ['ENVIRONMENT'] == 'develop':
     # ----- Production Path -----
     # TODO: Production environment
     #  data_path: {write here your absolute data path}
@@ -550,4 +558,5 @@ dir_paths = make_data_dirs()
 base_data_values = get_and_check_base_data()
 
 if __name__ == "__main__":
+    logger.info("Starting Trains Characteristics Tool...")
     main()

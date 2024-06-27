@@ -1,13 +1,14 @@
+import os
+import logging
 import numpy as np
 import matplotlib.pyplot as plt
 
 # -------------------------------------------------------------------------------------------------------------------
-import logging
-
+# Set Logger
+# -------------------------------------------------------------------------------------------------------------------
 logger = logging.getLogger(__name__)
 logger.propagate = False
-handler = logging.StreamHandler()
-# handler = logging.FileHandler('main.log')
+handler = logging.StreamHandler() if os.environ['ENVIRONMENT'] == 'develop' else logging.FileHandler('main.log')
 logger.setLevel(logging.INFO)
 formatter = logging.Formatter(fmt='%(asctime)s - %(name)s - %(levelname)s: %(message)s', datefmt="%Y-%m-%d %H:%M:%S")
 handler.setFormatter(formatter)

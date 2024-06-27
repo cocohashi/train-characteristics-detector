@@ -1,8 +1,8 @@
+import os
 import logging
-from typing import Callable, Any
-
 import numpy as np
 
+from typing import Callable
 from scipy import ndimage
 from sklearn.linear_model import LinearRegression
 from scipy import signal
@@ -10,12 +10,11 @@ from dtaidistance import dtw
 from .signal_processor import SignalProcessor
 
 # -------------------------------------------------------------------------------------------------------------------
-import logging
-
+# Set Logger
+# -------------------------------------------------------------------------------------------------------------------
 logger = logging.getLogger(__name__)
 logger.propagate = False
-handler = logging.StreamHandler()
-# handler = logging.FileHandler('main.log')
+handler = logging.StreamHandler() if os.environ['ENVIRONMENT'] == 'develop' else logging.FileHandler('main.log')
 logger.setLevel(logging.INFO)
 formatter = logging.Formatter(fmt='%(asctime)s - %(name)s - %(levelname)s: %(message)s', datefmt="%Y-%m-%d %H:%M:%S")
 handler.setFormatter(formatter)
