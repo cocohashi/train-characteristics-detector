@@ -3,8 +3,18 @@ import matplotlib.pyplot as plt
 
 import logging
 
-logging.basicConfig(level=logging.WARNING)
+# -------------------------------------------------------------------------------------------------------------------
+import logging
+
 logger = logging.getLogger(__name__)
+logger.propagate = False
+handler = logging.StreamHandler()
+# handler = logging.FileHandler('main.log')
+logger.setLevel(logging.INFO)
+formatter = logging.Formatter(fmt='%(asctime)s - %(name)s - %(levelname)s: %(message)s', datefmt="%Y-%m-%d %H:%M:%S")
+handler.setFormatter(formatter)
+logger.addHandler(handler)
+# -----------------------------------------------------------------------------------------------------------------
 
 
 class DataPlotter:

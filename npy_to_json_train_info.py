@@ -19,8 +19,18 @@ import traceback
 import logging
 from pathlib import Path
 
-logging.basicConfig(level=logging.DEBUG)
+# -------------------------------------------------------------------------------------------------------------------
+import logging
+
 logger = logging.getLogger(__name__)
+logger.propagate = False
+handler = logging.StreamHandler()
+# handler = logging.FileHandler('main.log')
+logger.setLevel(logging.INFO)
+formatter = logging.Formatter(fmt='%(asctime)s - %(name)s - %(levelname)s: %(message)s', datefmt="%Y-%m-%d %H:%M:%S")
+handler.setFormatter(formatter)
+logger.addHandler(handler)
+# -----------------------------------------------------------------------------------------------------------------
 
 # -----------------------------------------------------------------------------
 # Import get_train_characteristics
