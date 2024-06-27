@@ -1,10 +1,9 @@
 import os
 import argparse
-import logging
 import matplotlib.pyplot as plt
 import numpy as np
-from datetime import datetime
 
+from datetime import datetime
 from src.data_loader import DataLoader
 from src.signal_processor import SignalProcessor
 from src.data_plotter import DataPlotter

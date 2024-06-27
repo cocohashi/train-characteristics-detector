@@ -11,12 +11,10 @@ import json
 import numpy as np
 import time
 from scipy import signal
-from json import JSONEncoder
-from datetime import datetime, timedelta
+from datetime import datetime
 import matplotlib.pyplot as plt
 import sys
 import traceback
-import logging
 from pathlib import Path
 
 # -------------------------------------------------------------------------------------------------------------------

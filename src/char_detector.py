@@ -2,12 +2,11 @@ import logging
 from typing import Callable, Any
 
 import numpy as np
+
 from scipy import ndimage
 from sklearn.linear_model import LinearRegression
 from scipy import signal
-
 from dtaidistance import dtw
-
 from .signal_processor import SignalProcessor
 
 # -------------------------------------------------------------------------------------------------------------------
