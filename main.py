@@ -27,7 +27,9 @@ parser.add_argument(
 parser.add_argument(
     "-sec", "--section", type=int, help="Section that would be plotted", required=False
 )
-
+parser.add_argument(
+    "-sub", "--sub-section", type=int, help="Compute N subsections for all sections"
+)
 parser.add_argument(
     "-d", "--debug", action="store_true", help="Debug Mode"
 )
@@ -71,6 +73,9 @@ parser.add_argument(
 parser.add_argument(
     "-tt", "--show-train-track", action="store_true", help="Show Train Track"
 )
+parser.add_argument(
+    "-ss", "--show-sub-section", action="store_true", help="Show Train Track"
+)
 
 # -----------------------------------------------------------------------------------------------------------------
 # Confing Parameters
@@ -112,7 +117,6 @@ else:
     #  day_path: "..data/{project_name}/{file_extension}/{year}/{month}/{day}"
     data_path = data_path_ext_dev
     # ----------------------------
-
 
 # Train-map
 train_map = {
@@ -166,6 +170,7 @@ config = {
     "char-detector": {
         "section-limit": 108,
         "section-num": 2,
+        "sub-section-num": None,
         "mask-width": 12000,
         "thr-perc": 0.1,
         "mf-window": 20,
@@ -370,12 +375,17 @@ def main(args=None):
         day_path = os.path.join(data_path, str(year), f"{int(month):02}", f"{int(day):02}")
         output_day_path = os.path.join(output_path, str(year), str(month), str(day))
 
-    if args.section:
+    if args.section:  # Selects which section would be plotted
         section = args.section
         section_num = config['char-detector']['section-num']
         assert (
             bool(section < section_num)
         ), f"The given section should be less than {section_num}"
+
+    if args.sub_section:  # Sets the number of subsections that will be computed for each section
+        sub_section = args.sub_section
+        config['char-detector']['sub-section-num'] = sub_section
+        logger.info(f"Computed sub-sections set to: {sub_section}")
 
     if args.multi_regression:
         multi_regression_max_epochs = config['char-detector']['multi-regression-max-epochs']
@@ -463,6 +473,13 @@ def main(args=None):
             data_plotter.plot_train_track()
         else:
             logger.warning(f"Cannot show Train Track. Base data is not given!")
+
+    if args.show_sub_section:
+        if char_detector.mask_sub_sections:
+            for sub_section in char_detector.mask_sub_sections:
+                logger.info(f"sub-section: {sub_section.shape}")
+                data_plotter = DataPlotter(sub_section, **config['plot-matrix'])
+                data_plotter.plot_matrix()
 
     if args.serialize:
         logger.info("Serializing data...")

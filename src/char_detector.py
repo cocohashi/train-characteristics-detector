@@ -26,6 +26,7 @@ class CharDetector(SignalProcessor):
         self.signal_processor.Wn = config['signal']['Wn-class']  # Change Cut-off freq: Wn-class
         self.section_limit = config['char-detector']['section-limit']
         self.section_num = config['char-detector']['section-num']
+        self.sub_section_num = config['char-detector']['sub-section-num']
         self.mask_width = config['char-detector']['mask-width'] / self.N
         self.thr_perc = config['char-detector']['thr-perc']
         self.mf_window = config['char-detector']['mf-window']
@@ -68,6 +69,7 @@ class CharDetector(SignalProcessor):
         self.previous_linear_reg_params = None
         self.mask_sections = None
         self.masked_sections = None
+        self.mask_sub_sections = []
 
         # Slice waterfall in different spatial sections
         self.sections = self.get_sections()
@@ -87,6 +89,10 @@ class CharDetector(SignalProcessor):
         else:
             # Get mask of each section
             self.get_mask_sections()
+
+            # Get mask subsections
+            if self.sub_section_num:
+                self.get_mask_subsections()
 
             # Filter data again using the filter defined in Wn-class
             self.filtered_data = self.signal_processor.butterworth_filter()  # Apply Cut-off freq: Wn-class
@@ -288,6 +294,56 @@ class CharDetector(SignalProcessor):
             mask[:, x] = mask[::-1, x]
 
         return mask
+
+    @staticmethod
+    def get_mask_time_indexes_range(mask_section):
+        """
+        From a given one-hot 2D array, computes the max upper index value and min lower index value
+        :param mask_section: 2D numpy array
+        :return: (tuple) (int) lower_lim, (int) upper_lim
+        """
+        mask_section_argmax_left_high = mask_section.shape[0] - np.argmax(mask_section[:, 0][::-1]) - 1
+        mask_section_argmax_left_low = np.argmax(mask_section[:, 0])
+        mask_section_argmax_right_high = mask_section.shape[0] - np.argmax(
+            mask_section[:, mask_section.shape[1] - 1][::-1]) - 1
+        mask_section_argmax_right_low = np.argmax(mask_section[:, mask_section.shape[1] - 1])
+        upper_lim = max(mask_section_argmax_left_high, mask_section_argmax_right_high)
+        lower_lim = min(mask_section_argmax_left_low, mask_section_argmax_right_low)
+        return lower_lim, upper_lim
+
+    def get_mask_subsections(self):
+        """
+        Deletes all empty rows and columns
+        :param data: 2D numpy array
+        :return: 2D numpy array
+        """
+        if self.mask_sections:
+            spatial_section_length = self.mask_sections[0].shape[1]
+            subsection_spatial_length = int(spatial_section_length / self.sub_section_num)
+
+            for s_idx, mask_section in enumerate(self.mask_sections):
+                # Get temporal index pairs
+                mask_subsections = [mask_section[:, i * subsection_spatial_length:(i + 1) * subsection_spatial_length]
+                                    for i
+                                    in range(self.sub_section_num)]
+                temporal_subsection_indexes_pairs = [self.get_mask_time_indexes_range(mask_section) for mask_section in
+                                                     mask_subsections]
+                logger.info(f"section - {s_idx} temporal indexes pairs: {temporal_subsection_indexes_pairs}")
+
+                # Get spatial index pairs
+                spatial_subsection_indexes = [x for x in range(0, spatial_section_length + subsection_spatial_length,
+                                                               subsection_spatial_length)]
+                spatial_subsection_indexes_pairs = [(spatial_subsection_indexes[i], spatial_subsection_indexes[i + 1])
+                                                    for i in range(len(spatial_subsection_indexes) - 1)]
+                logger.info(f"section - {s_idx} spatial indexes pairs: {spatial_subsection_indexes_pairs}")
+                tsi = temporal_subsection_indexes_pairs
+                ssi = spatial_subsection_indexes_pairs
+
+                for i in range(self.sub_section_num):
+                    logger.info(f"{tsi[i][0]}, {tsi[i][1]}, {ssi[i][0]}, {ssi[i][1]}")
+                    self.mask_sub_sections.append(
+                        self.sections[s_idx][tsi[i][0]:tsi[i][1], ssi[i][0]:ssi[i][1]]
+                    )
 
     @staticmethod
     def auto_crop(data):
